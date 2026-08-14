@@ -10,13 +10,13 @@
     <link rel="stylesheet" href="/style.css">
     <style>
         .rpt-wrap {
-            max-width: 860px;
+            max-width: 900px;
         }
 
-        /* ── Summary stats ── */
+        /* ── Summary stat cards ── */
         .rpt-summary {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
             gap: 14px;
             margin-bottom: 28px;
         }
@@ -64,8 +64,8 @@
             margin-bottom: 16px;
         }
 
-        /* ── Demographic info block ── */
-        .demo-block {
+        /* ── Cards ── */
+        .rpt-card {
             background: #fff;
             border-radius: 14px;
             box-shadow: 0 2px 12px rgba(29, 36, 72, .06);
@@ -73,7 +73,7 @@
             margin-bottom: 24px;
         }
 
-        .demo-block-header {
+        .rpt-card-header {
             background: #1d2448;
             padding: 13px 20px;
             display: flex;
@@ -81,22 +81,20 @@
             gap: 10px;
         }
 
-        .demo-block-header h4 {
+        .rpt-card-header h4 {
             color: #fff;
             font-size: 13.5px;
             font-weight: 600;
             margin: 0;
+            letter-spacing: .3px;
         }
 
-        .demo-block-header i {
+        .rpt-card-header i {
             color: rgba(255, 255, 255, .7);
             font-size: 14px;
         }
 
-        .demo-block-body {
-            padding: 20px 24px;
-        }
-
+        /* ── Demographic rows ── */
         .demo-row {
             display: flex;
             align-items: baseline;
@@ -132,73 +130,6 @@
             font-size: 13px;
             min-width: 60px;
             text-align: center;
-        }
-
-        .demo-rbi-row {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            margin-top: 4px;
-            font-size: 13px;
-            color: #4a5068;
-        }
-
-        .demo-rbi-row label {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            cursor: default;
-        }
-
-        .demo-rbi-row input[type="checkbox"] {
-            width: 15px;
-            height: 15px;
-            accent-color: #1d2448;
-            pointer-events: none;
-        }
-
-        .demo-sem-row {
-            display: flex;
-            gap: 32px;
-            margin-top: 4px;
-            font-size: 13px;
-            color: #4a5068;
-        }
-
-        .demo-sem-row span {
-            border-bottom: 1px solid #1d2448;
-            min-width: 80px;
-            display: inline-block;
-        }
-
-        /* ── Section card ── */
-        .rpt-card {
-            background: #fff;
-            border-radius: 14px;
-            box-shadow: 0 2px 12px rgba(29, 36, 72, .06);
-            overflow: hidden;
-            margin-bottom: 24px;
-        }
-
-        .rpt-card-header {
-            background: #1d2448;
-            padding: 13px 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .rpt-card-header h4 {
-            color: #fff;
-            font-size: 13.5px;
-            font-weight: 600;
-            margin: 0;
-            letter-spacing: .3px;
-        }
-
-        .rpt-card-header i {
-            color: rgba(255, 255, 255, .7);
-            font-size: 14px;
         }
 
         /* ── Tables ── */
@@ -295,38 +226,11 @@
             color: #fff;
         }
 
-        /* ── Progress bar for PDF generation ── */
-        #pdfProgress {
-            display: none;
-            align-items: center;
-            gap: 10px;
-            font-size: 12.5px;
-            color: #1d2448;
-        }
-
-        #pdfProgressBar {
-            width: 140px;
-            height: 5px;
-            background: #e2e5ef;
-            border-radius: 4px;
-            overflow: hidden;
-        }
-
-        #pdfProgressFill {
-            height: 100%;
-            background: #1d2448;
-            border-radius: 4px;
-            width: 0%;
-            transition: width .3s;
-        }
-
-        /* ── Print styles ── */
         @media print {
 
             .db-sidebar,
             .db-topbar,
-            .rpt-toolbar,
-            .db-nav-item {
+            .rpt-toolbar {
                 display: none !important;
             }
 
@@ -334,8 +238,7 @@
                 margin: 0 !important;
             }
 
-            .rpt-card,
-            .demo-block {
+            .rpt-card {
                 box-shadow: none;
                 border: 1px solid #ccc;
             }
@@ -366,6 +269,9 @@
     $avgHHSize        = $avgHHSize        ?? 0;
     $ageBrackets      = $ageBrackets      ?? [];
     $sectorRows       = $sectorRows       ?? [];
+    $waterRows        = $waterRows        ?? [];
+    $sanitationRows   = $sanitationRows   ?? [];
+    $eduRows          = $eduRows          ?? [];
     $registeredVoters = $registeredVoters ?? 0;
     $totalFamilies    = $totalFamilies    ?? 0;
     $currentYear      = date('Y');
@@ -387,14 +293,14 @@
                     <div class="rpt-stat-icon" style="background:rgba(91,111,214,.12);color:#5b6fd6;"><i class="fas fa-male"></i></div>
                     <div>
                         <div class="rpt-stat-num"><?= number_format($totalMale) ?></div>
-                        <div class="rpt-stat-label">Male (Heads)</div>
+                        <div class="rpt-stat-label">Male</div>
                     </div>
                 </div>
                 <div class="rpt-stat">
                     <div class="rpt-stat-icon" style="background:rgba(220,53,69,.12);color:#dc3545;"><i class="fas fa-female"></i></div>
                     <div>
                         <div class="rpt-stat-num"><?= number_format($totalFemale) ?></div>
-                        <div class="rpt-stat-label">Female (Heads)</div>
+                        <div class="rpt-stat-label">Female</div>
                     </div>
                 </div>
                 <div class="rpt-stat">
@@ -415,7 +321,7 @@
                     <div class="rpt-stat-icon" style="background:rgba(29,36,72,.08);color:#1d2448;"><i class="fas fa-chart-bar"></i></div>
                     <div>
                         <div class="rpt-stat-num"><?= $avgHHSize ?></div>
-                        <div class="rpt-stat-label">Avg. Household Size</div>
+                        <div class="rpt-stat-label">Avg. HH Size</div>
                     </div>
                 </div>
             </div>
@@ -423,78 +329,37 @@
             <div class="rpt-wrap" id="reportContent">
 
                 <!-- ── Toolbar ── -->
-                <div class="rpt-toolbar" id="rptToolbar">
-                    <button class="db-btn db-btn--outline" onclick="window.print()">
-                        <i class="fas fa-print"></i> Print
-                    </button>
-                    <button class="db-btn db-btn--primary" onclick="window.open('/secretary/reports/export','_blank')">
-                        <i class="fas fa-file-pdf"></i> Download PDF
-                    </button>
+                <div class="rpt-toolbar">
+                    <button class="db-btn db-btn--outline" onclick="window.print()"><i class="fas fa-print"></i> Print</button>
+                    <button class="db-btn db-btn--primary" onclick="window.open('/secretary/reports/export','_blank')"><i class="fas fa-file-pdf"></i> Download PDF</button>
                 </div>
 
                 <!-- ── IV. Demographic Information ── -->
-                <div class="demo-block">
-                    <div class="demo-block-header">
-                        <i class="fas fa-info-circle"></i>
-                        <h4>IV. &nbsp;Demographic Information &mdash; CY <?= $currentYear ?></h4>
+                <div class="rpt-card">
+                    <div class="rpt-card-header"><i class="fas fa-info-circle"></i>
+                        <h4>IV. &nbsp;Demographic Information — CY <?= $currentYear ?></h4>
                     </div>
-                    <div class="demo-block-body">
-
-                        <div class="demo-row">
-                            <span class="demo-label">A.</span>
-                            <span class="demo-text">No. of Registered Voters:</span>
-                            <span class="demo-val"><?= number_format($registeredVoters) ?></span>
-                        </div>
-
-                        <div class="demo-row">
-                            <span class="demo-label">B.</span>
-                            <span class="demo-text">No. of Population:</span>
-                            <span class="demo-val"><?= number_format($totalPop) ?></span>
-                        </div>
-
+                    <div style="padding:20px 24px;">
+                        <div class="demo-row"><span class="demo-label">A.</span><span class="demo-text">No. of Registered Voters:</span><span class="demo-val"><?= number_format($registeredVoters) ?></span></div>
+                        <div class="demo-row"><span class="demo-label">B.</span><span class="demo-text">No. of Population:</span><span class="demo-val"><?= number_format($totalPop) ?></span></div>
                         <div class="demo-row" style="flex-direction:column;align-items:flex-start;gap:6px;">
                             <div style="display:flex;align-items:baseline;gap:10px;width:100%;">
                                 <span class="demo-label">C.</span>
                                 <span class="demo-text">With RBIs?</span>
-                                <div class="demo-rbi-row">
-                                    <label><input type="checkbox" disabled> Yes</label>
-                                    <label><input type="checkbox" checked disabled> No</label>
-                                </div>
+                                <label style="display:flex;align-items:center;gap:5px;font-size:13px;color:#4a5068;cursor:default;"><input type="checkbox" disabled> Yes</label>
+                                <label style="display:flex;align-items:center;gap:5px;font-size:13px;color:#4a5068;cursor:default;"><input type="checkbox" checked disabled> No</label>
                             </div>
-                            <div style="padding-left:38px;font-size:12.5px;color:#9aa0b4;">
-                                If yes, No. of Inhabitants (RBI):
-                                <div class="demo-sem-row" style="margin-top:4px;">
-                                    <span>1<sup>st</sup> Sem.: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
-                                    <span>2<sup>nd</sup> Sem.: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
-                                </div>
-                            </div>
+                            <div style="padding-left:38px;font-size:12px;color:#9aa0b4;">If yes, No. of Inhabitants (RBI): &nbsp; 1<sup>st</sup> Sem.: <span style="border-bottom:1px solid #ccc;display:inline-block;min-width:60px;">&nbsp;</span> &nbsp; 2<sup>nd</sup> Sem.: <span style="border-bottom:1px solid #ccc;display:inline-block;min-width:60px;">&nbsp;</span></div>
                         </div>
-
-                        <div class="demo-row">
-                            <span class="demo-label">D.</span>
-                            <span class="demo-text">No. of Households:</span>
-                            <span class="demo-val"><?= number_format($totalHouseholds) ?></span>
-                        </div>
-
-                        <div class="demo-row">
-                            <span class="demo-label">E.</span>
-                            <span class="demo-text">No. of Families:</span>
-                            <span class="demo-val"><?= number_format($totalFamilies) ?></span>
-                        </div>
-
-                        <div class="demo-row" style="border-bottom:none;">
-                            <span class="demo-label">F.</span>
-                            <span class="demo-text">Population by Age Bracket</span>
-                            <span style="font-size:11.5px;color:#9aa0b4;font-style:italic;">(see table below)</span>
-                        </div>
-
+                        <div class="demo-row"><span class="demo-label">D.</span><span class="demo-text">No. of Households:</span><span class="demo-val"><?= number_format($totalHouseholds) ?></span></div>
+                        <div class="demo-row"><span class="demo-label">E.</span><span class="demo-text">No. of Families:</span><span class="demo-val"><?= number_format($totalFamilies) ?></span></div>
+                        <div class="demo-row" style="border-bottom:none;"><span class="demo-label">F.</span><span class="demo-text">Population by Age Bracket</span><span style="font-size:11.5px;color:#9aa0b4;font-style:italic;">(see table below)</span></div>
                     </div>
                 </div>
 
                 <!-- ── F. Population by Age Bracket ── -->
                 <div class="rpt-card">
-                    <div class="rpt-card-header">
-                        <i class="fas fa-table"></i>
+                    <div class="rpt-card-header"><i class="fas fa-table"></i>
                         <h4>F. &nbsp;Population by Age Bracket</h4>
                     </div>
                     <table class="rpt-table">
@@ -532,8 +397,7 @@
 
                 <!-- ── G. Population by Sector ── -->
                 <div class="rpt-card">
-                    <div class="rpt-card-header">
-                        <i class="fas fa-table"></i>
+                    <div class="rpt-card-header"><i class="fas fa-table"></i>
                         <h4>G. &nbsp;Population by Sector</h4>
                     </div>
                     <table class="rpt-table">
@@ -553,6 +417,72 @@
                         </tbody>
                     </table>
                 </div>
+
+                <!-- ── H. Water & Sanitation ── -->
+                <div class="rpt-card">
+                    <div class="rpt-card-header"><i class="fas fa-tint"></i>
+                        <h4>H. &nbsp;Water Source &amp; Sanitation</h4>
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;">
+                        <div>
+                            <div style="padding:10px 16px 6px;font-size:11px;font-weight:700;color:#5b6fd6;text-transform:uppercase;letter-spacing:.5px;background:#eef0fb;border-bottom:1px solid #d8dce8;">Water Source Level</div>
+                            <table class="rpt-table">
+                                <tbody>
+                                    <?php foreach ($waterRows as $row): ?>
+                                        <tr>
+                                            <td><?= esc($row['label']) ?></td>
+                                            <td class="rpt-total"><?= number_format($row['total']) ?></td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div style="border-left:1px solid #f0f2f8;">
+                            <div style="padding:10px 16px 6px;font-size:11px;font-weight:700;color:#5b6fd6;text-transform:uppercase;letter-spacing:.5px;background:#eef0fb;border-bottom:1px solid #d8dce8;">Sanitation</div>
+                            <table class="rpt-table">
+                                <tbody>
+                                    <?php foreach ($sanitationRows as $row): ?>
+                                        <tr>
+                                            <td><?= esc($row['label']) ?></td>
+                                            <td class="rpt-total"><?= number_format($row['total']) ?></td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── I. Educational Attainment ── -->
+                <?php if (!empty($eduRows)): ?>
+                    <div class="rpt-card">
+                        <div class="rpt-card-header"><i class="fas fa-graduation-cap"></i>
+                            <h4>I. &nbsp;Educational Attainment</h4>
+                        </div>
+                        <table class="rpt-table">
+                            <thead>
+                                <tr>
+                                    <th style="text-align:left;">LEVEL</th>
+                                    <th class="rpt-total">TOTAL</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($eduRows as $row): ?>
+                                    <tr>
+                                        <td><?= esc($row['label']) ?></td>
+                                        <td class="rpt-total"><?= number_format($row['total']) ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td>TOTAL</td>
+                                    <td><?= number_format(array_sum(array_column($eduRows, 'total'))) ?></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                <?php endif; ?>
 
             </div><!-- end rpt-wrap -->
         </div>

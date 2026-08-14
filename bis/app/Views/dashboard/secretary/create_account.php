@@ -965,9 +965,9 @@
             </div>
 
             <?php
-            $activeCaptain   = $activeCaptain   ?? null;
-            $activeSecretary = $activeSecretary ?? null;
-            $activeSk        = $activeSk        ?? null;
+            $activeCaptain     = $activeCaptain   ?? null;
+            $activeSecretaries = $activeSecretaries ?? [];
+            $activeSk          = $activeSk        ?? null;
             $eligibleResidents = $eligibleResidents ?? [];
             ?>
 
@@ -1030,25 +1030,42 @@
                                 </div>
                             <?php endif; ?>
 
-                            <!-- Secretary slot -->
-                            <?php if ($activeSecretary): ?>
-                                <div class="ar-official-row">
-                                    <div class="ar-official-avatar ar-sec">
-                                        <?= strtoupper(substr($activeSecretary['first_name'], 0, 1)) ?>
+                            <!-- Secretary slot (supports default admin + one resident secretary) -->
+                            <?php
+                            $hasNonAdminSecretary = false;
+                            foreach ($activeSecretaries as $s) {
+                                if (! empty($s['username']) && $s['username'] !== 'secretary_admin') {
+                                    $hasNonAdminSecretary = true;
+                                    break;
+                                }
+                            }
+                            ?>
+
+                            <?php if (! empty($activeSecretaries)): ?>
+                                <?php foreach ($activeSecretaries as $activeSecretary): ?>
+                                    <div class="ar-official-row">
+                                        <div class="ar-official-avatar ar-sec">
+                                            <?= strtoupper(substr($activeSecretary['first_name'], 0, 1)) ?>
+                                        </div>
+                                        <div class="ar-official-info">
+                                            <div class="ar-official-name"><?= esc(trim($activeSecretary['first_name'] . ' ' . $activeSecretary['last_name'])) ?></div>
+                                            <div class="ar-official-meta">@<?= esc($activeSecretary['username']) ?></div>
+                                        </div>
+                                        <span class="ar-role-badge ar-role-badge--secretary">Secretary</span>
+                                        <?php if (! empty($activeSecretary['username']) && $activeSecretary['username'] === 'secretary_admin'): ?>
+                                            <!-- Default admin cannot be revoked -->
+                                            <div style="padding:6px 8px;color:#9aa0b4;font-size:12px;">Default</div>
+                                        <?php else: ?>
+                                            <form action="/secretary/demote-official/<?= $activeSecretary['id'] ?>" method="post" id="revokeForm-secretary-<?= $activeSecretary['id'] ?>">
+                                                <?= csrf_field() ?>
+                                                <button type="button" class="ar-revoke-btn"
+                                                    onclick="confirmRevoke('secretary','<?= esc(trim($activeSecretary['first_name'] . ' ' . $activeSecretary['last_name'])) ?>')">
+                                                    <i class="fas fa-user-minus"></i> Revoke
+                                                </button>
+                                            </form>
+                                        <?php endif; ?>
                                     </div>
-                                    <div class="ar-official-info">
-                                        <div class="ar-official-name"><?= esc(trim($activeSecretary['first_name'] . ' ' . $activeSecretary['last_name'])) ?></div>
-                                        <div class="ar-official-meta">@<?= esc($activeSecretary['username']) ?></div>
-                                    </div>
-                                    <span class="ar-role-badge ar-role-badge--secretary">Secretary</span>
-                                    <form action="/secretary/demote-official/<?= $activeSecretary['id'] ?>" method="post" id="revokeForm-secretary">
-                                        <?= csrf_field() ?>
-                                        <button type="button" class="ar-revoke-btn"
-                                            onclick="confirmRevoke('secretary','<?= esc(trim($activeSecretary['first_name'] . ' ' . $activeSecretary['last_name'])) ?>')">
-                                            <i class="fas fa-user-minus"></i> Revoke
-                                        </button>
-                                    </form>
-                                </div>
+                                <?php endforeach; ?>
                             <?php else: ?>
                                 <div class="ar-empty-slot">
                                     <i class="fas fa-user-shield"></i>
@@ -1110,11 +1127,11 @@
                                                 <span style="font-size:10px;color:#c0392b;">Slot filled</span>
                                             <?php endif; ?>
                                         </button>
-                                        <button type="button" class="ar-role-btn <?= $activeSecretary ? 'ar-role-btn--blocked' : '' ?>"
+                                        <button type="button" class="ar-role-btn <?= $hasNonAdminSecretary ? 'ar-role-btn--blocked' : '' ?>"
                                             id="arBtn-secretary" onclick="selectPromoteRole('secretary')">
                                             <i class="fas fa-user-shield"></i>
                                             Secretary
-                                            <?php if ($activeSecretary): ?>
+                                            <?php if ($hasNonAdminSecretary): ?>
                                                 <span style="font-size:10px;color:#c0392b;">Slot filled</span>
                                             <?php endif; ?>
                                         </button>

@@ -17,6 +17,13 @@ class CensusController extends BaseController
         $this->memberModel    = new HouseholdMemberModel();
     }
 
+    // ── Show create household form as a full page (instead of modal)
+    public function create()
+    {
+        $role = session()->get('role');
+        return view('dashboard/secretary/household_form', ['role' => $role]);
+    }
+
     // ── Save new household from the census form ───────────────────────────────
 
     public function store()

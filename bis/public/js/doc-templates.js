@@ -4,6 +4,8 @@
  *
  * Usage:
  *   BisDoc.setCensus({ name, age, civil, zone, occupation });
+ *   BisDoc.setCaptain('FULL NAME');
+ *   BisDoc.setBarangay({ barangay_name, municipality, province, region, full_address, office_header, ... });
  *   const html = BisDoc.build('clearance', 'Juan Dela Cruz', 'Employment');
  *   document.getElementById('preview').innerHTML = html;
  *   BisDoc.print('clearance', 'Juan Dela Cruz', 'Employment');
@@ -13,14 +15,29 @@ const BisDoc = (function () {
 
     // ── Census data (set per page load) ──────────────────────────────────────
     let _census = { name: '', age: '', civil: '', zone: '', occupation: '' };
-    let _captain = 'Punong Barangay';   // overridden by setCaptain()
 
-    function setCensus(data) {
-        _census = Object.assign(_census, data);
-    }
+    // ── Barangay settings (overridable from PHP) ──────────────────────────────
+    let _b = {
+        barangay_name : 'BARANGAY BACOLOD',
+        municipality  : 'Municipality of Bato',
+        province      : 'Province of Camarines Sur',
+        region        : 'Region V',
+        country       : 'Republic of the Philippines',
+        full_address  : 'Barangay Bacolod, Bato, Camarines Sur',
+        office_header : 'OFFICE OF THE PUNONG BARANGAY',
+        captain_name  : 'Punong Barangay',
+        captain_title : 'Punong Barangay',
+    };
 
-    function setCaptain(name) {
-        if (name) _captain = name;
+    function setCensus(data)   { _census = Object.assign(_census, data); }
+    function setCaptain(name)  { if (name) _b.captain_name = name; }
+
+    /**
+     * Override barangay identity settings.
+     * Call with the PHP-injected object on each page that uses BisDoc.
+     */
+    function setBarangay(data) {
+        if (data) _b = Object.assign(_b, data);
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -115,83 +132,88 @@ html, body { width: 210mm; height: 297mm; background: #fff; }
 .bc-residency-sig div { text-align: center; min-width: 220px; font-family: Cambria, serif; font-size: 13pt; line-height: 1.7; }
 </style>`;
 
-    // ── Shared header HTML ────────────────────────────────────────────────────
+    // ── Shared header HTML — uses dynamic barangay settings ───────────────────
     function _header() {
         return `<div class="bc-top-box">
   <div class="bc-header-row">
-    <img src="/bacolod.png" class="bc-seal" alt="Bacolod Seal">
+    <img src="/bacolod.png" class="bc-seal" alt="${_b.barangay_name} Seal">
     <div class="bc-header-center">
-      <p>Republic of the Philippines</p><p>Region V</p>
-      <p>Province of Camarines Sur</p><p>Municipality of Bato</p>
-      <p><strong>BARANGAY BACOLOD</strong></p>
+      <p>${_b.country}</p>
+      <p>${_b.region}</p>
+      <p>${_b.province}</p>
+      <p>${_b.municipality}</p>
+      <p><strong>${_b.barangay_name}</strong></p>
       <p class="bc-oOo">-oOo-</p>
     </div>
     <img src="/picture1.png" class="bc-seal" alt="Bato Seal">
   </div>
-  <div class="bc-office-bar"><strong>OFFICE OF THE PUNONG BARANGAY</strong></div>
+  <div class="bc-office-bar"><strong>${_b.office_header}</strong></div>
 </div>`;
     }
 
     // ── Document body builders ────────────────────────────────────────────────
 
     function _clearance(name, civil, zone, purpose, d) {
+        const zoneText = zone ? zone + ', ' : '';
         return `<div class="bc-doc-title">BARANGAY CLEARANCE</div>
 <div class="bc-body-text">
   <p><strong>TO WHOM IT MAY CONCERN,</strong></p>
-  <p class="bc-indent">This is to certify that <strong>${name}</strong>, a legal age, ${civil} and a bonafide resident of ${zone ? zone + ', ' : ''}<strong>Barangay Bacolod, Bato, Camarines Sur.</strong></p>
+  <p class="bc-indent">This is to certify that <strong>${name}</strong>, a legal age, ${civil} and a bonafide resident of ${zoneText}<strong>${_b.full_address}.</strong></p>
   <p class="bc-indent">He/She possessed good moral character trustworthy, a law-abiding Filipino Citizen and cooperative to all undertakings for the progress of the community.</p>
   <p class="bc-indent">This Barangay Clearance is being issued upon the request of the above-named person for <strong>${purpose}</strong> and for whatever legal purposes it may serve.</p>
-  <p class="bc-indent">Given this <strong>${ordinal(d.day)}</strong> day of <strong>${d.month}, ${d.year}</strong> at <strong>Barangay Bacolod, Bato, Camarines Sur, Philippines.</strong></p>
+  <p class="bc-indent">Given this <strong>${ordinal(d.day)}</strong> day of <strong>${d.month}, ${d.year}</strong> at <strong>${_b.full_address}, Philippines.</strong></p>
 </div>
 <div class="bc-sig-section">
   <div class="bc-sig-left"><div class="bc-sig-line"></div><div class="bc-sig-sub">(Signature of Applicant)</div></div>
   <div class="bc-sig-right">
     <p class="bc-approved-by">Approved by:</p>
-    <p class="bc-captain-name">${_captain}</p>
-    <p class="bc-captain-title">Punong Barangay</p>
+    <p class="bc-captain-name">${_b.captain_name}</p>
+    <p class="bc-captain-title">${_b.captain_title}</p>
   </div>
 </div>
 <div class="bc-footer-info">
   <p>CTC No.&nbsp; : _______________</p>
-  <p>Issued at : <strong><u>Bacolod, Bato, Camarines Sur</u></strong></p>
+  <p>Issued at : <strong><u>${_b.full_address}</u></strong></p>
   <p>Issued on: <strong><u>${d.month} ${d.day}, ${d.year}</u></strong></p>
   <div class="bc-photo-row"><div class="bc-photo-box"></div><div class="bc-photo-box"></div></div>
   <p>OR. No.&nbsp;&nbsp; : _______________</p>
-  <p>Issued at : <strong><u>Bacolod, Bato, Camarines Sur</u></strong></p>
+  <p>Issued at : <strong><u>${_b.full_address}</u></strong></p>
   <p>Issued on: <strong><u>${d.month} ${d.day}, ${d.year}</u></strong></p>
 </div>`;
     }
 
     function _residency(name, civil, zone, purpose, d) {
+        const zoneText = zone ? zone + ', ' : '';
         return `<div class="bc-doc-title" style="color:#1a3a8f;">BARANGAY CERTIFICATION</div>
 <div class="bc-body-text">
   <p><strong>TO WHOM IT MAY CONCERN:</strong></p>
-  <p class="bc-indent">This is to certify that <strong>${name.toUpperCase()}</strong>, of legal age, ${civil}, Filipino and a Bonafide resident of ${zone ? zone + ', ' : ''}<strong>Barangay Bacolod, Bato, Camarines Sur.</strong></p>
+  <p class="bc-indent">This is to certify that <strong>${name.toUpperCase()}</strong>, of legal age, ${civil}, Filipino and a Bonafide resident of ${zoneText}<strong>${_b.full_address}.</strong></p>
   <p class="bc-indent">This further certifies that according to the records, the above-mentioned name is a registered resident living at the address stated above.</p>
   <p class="bc-indent">This certification is issued upon the request of the interested party for <strong>${purpose}</strong> and for whatever legal intent this may serve.</p>
-  <p class="bc-indent">Issued this <strong>${ordinal(d.day)}</strong> day of <strong>${d.month}, ${d.year}</strong> at <strong>Barangay Bacolod, Bato, Camarines Sur. Philippines.</strong></p>
+  <p class="bc-indent">Issued this <strong>${ordinal(d.day)}</strong> day of <strong>${d.month}, ${d.year}</strong> at <strong>${_b.full_address}, Philippines.</strong></p>
 </div>
 <div class="bc-sig-section" style="justify-content:flex-end;margin-top:auto;padding-top:18mm;">
   <div style="text-align:center;min-width:220px;font-family:Cambria,serif;font-size:13pt;line-height:1.7;">
     <p style="margin:0;">Attested by:</p>
-    <p style="margin:0;font-weight:700;text-decoration:underline;">${_captain}</p>
-    <p style="margin:0;">Punong Barangay</p>
+    <p style="margin:0;font-weight:700;text-decoration:underline;">${_b.captain_name}</p>
+    <p style="margin:0;">${_b.captain_title}</p>
   </div>
 </div>`;
     }
 
     function _indigency(name, civil, zone, purpose, d) {
+        const zoneText = zone ? zone + ', ' : '';
         return `<div class="bc-doc-title" style="color:#1a3a8f;">CERTIFICATE OF INDIGENCY</div>
 <div class="bc-body-text" style="flex:1;">
   <p><strong>To Whom It May Concern,</strong></p>
-  <p class="bc-indent">This is to certify that <strong>${name.toUpperCase()}</strong>, legal age, ${civil.toLowerCase()}, bonafide resident of ${zone ? zone + ', ' : ''}<strong>Barangay Bacolod, Bato, Camarines Sur</strong> and are identified belonging to the "Indigent family" in this community as per record in this office.</p>
+  <p class="bc-indent">This is to certify that <strong>${name.toUpperCase()}</strong>, legal age, ${civil.toLowerCase()}, bonafide resident of ${zoneText}<strong>${_b.full_address}</strong> and are identified belonging to the "Indigent family" in this community as per record in this office.</p>
   <p class="bc-indent">This further certifies that the above-named and whose family earned meager income not enough to augment their basic needs and financial, hence an indigent and qualified to avail for <strong>${purpose}</strong>.</p>
-  <p class="bc-indent">Given this <strong>${ordinal(d.day)}</strong> day of <strong>${d.month}, ${d.year}</strong> at <strong>Barangay Bacolod, Bato, Camarines Sur. Philippines.</strong></p>
+  <p class="bc-indent">Given this <strong>${ordinal(d.day)}</strong> day of <strong>${d.month}, ${d.year}</strong> at <strong>${_b.full_address}, Philippines.</strong></p>
 </div>
 <div style="margin-top:auto;padding-top:20mm;text-align:right;font-family:Cambria,serif;font-size:12pt;position:relative;z-index:1;line-height:1.7;flex-shrink:0;">
   <p style="margin:0;">Attested by:</p>
-  <p style="margin:0;font-weight:700;text-decoration:underline;">${_captain}</p>
-  <p style="margin:0;">Punong Barangay</p>
+  <p style="margin:0;font-weight:700;text-decoration:underline;">${_b.captain_name}</p>
+  <p style="margin:0;">${_b.captain_title}</p>
 </div>
 <p style="margin-top:10mm;font-family:Cambria,serif;font-size:12pt;color:#c0392b;position:relative;z-index:1;flex-shrink:0;">Not Valid Without Seal</p>`;
     }
@@ -200,15 +222,15 @@ html, body { width: 210mm; height: 297mm; background: #fff; }
 
     /**
      * Build a screen-preview HTML string.
-     * @param {string} docKey  'clearance' | 'residency' | 'indigency'
+     * @param {string} docKey   'clearance' | 'residency' | 'indigency'
      * @param {string} forMember  Name of the person the document is for
      * @param {string} purpose    Purpose of the request
      * @returns {string} Full HTML including styles
      */
     function build(docKey, forMember, purpose) {
         const name  = forMember || _census.name;
-        const civil = _census.civil;
-        const zone  = _census.zone;
+        const civil = _census.civil  || 'Single';
+        const zone  = _census.zone   || '';
         const d     = today();
 
         let body = '';
@@ -233,8 +255,8 @@ html, body { width: 210mm; height: 297mm; background: #fff; }
      */
     function print(docKey, forMember, purpose) {
         const name  = forMember || _census.name;
-        const civil = _census.civil;
-        const zone  = _census.zone;
+        const civil = _census.civil  || 'Single';
+        const zone  = _census.zone   || '';
         const d     = today();
 
         let body = '';
@@ -259,6 +281,6 @@ html, body { width: 210mm; height: 297mm; background: #fff; }
         win.document.close();
     }
 
-    return { setCensus, setCaptain, build, print };
+    return { setCensus, setCaptain, setBarangay, build, print };
 
 })();

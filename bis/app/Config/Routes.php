@@ -68,6 +68,10 @@ $routes->group('/captain', ['filter' => ['auth', 'role:captain']], function ($ro
     $routes->post('approve-account/(:num)', 'AuthController::approveAccount/$1');
     $routes->post('reject-account/(:num)',  'AuthController::rejectAccount/$1');
 
+    // Notifications
+    $routes->get('notifications',       'AdminNotificationController::index/captain');
+    $routes->get('notifications/poll',  'AdminNotificationController::poll');
+
     // Captain creates Secretary, Treasurer accounts
     $routes->get('create-account',        'UIController::captain_create_account');
     $routes->post('create-account/store', 'AuthController::createOfficialAccount');
@@ -87,6 +91,7 @@ $routes->group('/captain', ['filter' => ['auth', 'role:captain']], function ($ro
     $routes->post('settings/avatar',           'SettingsController::uploadAvatar');
 
     // Census CRUD
+    $routes->get('census/new',                     'CensusController::create');
     $routes->post('census/store',                    'CensusController::store');
     $routes->post('census/update/(:segment)',         'CensusController::updateHousehold/$1');
     $routes->post('census/delete/(:segment)',         'CensusController::delete/$1');
@@ -108,6 +113,11 @@ $routes->group('/secretary', ['filter' => ['auth', 'role:secretary']], function 
     $routes->get('clearance/request/(:num)',     'ClearanceController::residentDetail/$1');
     $routes->post('clearance/approve/(:num)',     'ClearanceController::approve/$1');
     $routes->post('clearance/reject/(:num)',      'ClearanceController::reject/$1');
+    $routes->get('templates',                        'DocumentTemplateController::index');
+    $routes->get('templates/edit/(:segment)',        'DocumentTemplateController::edit/$1');
+    $routes->post('templates/update/(:segment)',     'DocumentTemplateController::update/$1');
+    $routes->get('barangay-settings',                'DocumentTemplateController::barangaySettings');
+    $routes->post('barangay-settings/save',          'DocumentTemplateController::saveBarangaySettings');
     $routes->get('requests',           'UIController::secretary_requests');
     $routes->get('reports',            'UIController::secretary_reports');
     $routes->get('reports/export',     'ReportsExportController::export/secretary');
@@ -132,6 +142,10 @@ $routes->group('/secretary', ['filter' => ['auth', 'role:secretary']], function 
     $routes->get('pending-accounts',        'AuthController::pendingAccounts');
     $routes->post('approve-account/(:num)', 'AuthController::approveAccount/$1');
     $routes->post('reject-account/(:num)',  'AuthController::rejectAccount/$1');
+
+    // Notifications
+    $routes->get('notifications',       'AdminNotificationController::index/secretary');
+    $routes->get('notifications/poll',  'AdminNotificationController::poll');
 
     // Secretary creates Captain, Resident, SK accounts
     $routes->get('create-account',        'UIController::secretary_create_account');

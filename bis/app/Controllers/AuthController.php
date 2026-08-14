@@ -526,18 +526,43 @@ class AuthController extends BaseController
         }
 
         // Single-instance check
-        $existing = $this->userModel->getActiveByRole($newRole);
-        if ($existing) {
-            $existingName = trim($existing['first_name'] . ' ' . $existing['last_name']);
-            return redirect()->back()->with(
-                'error',
-                'An active ' . ucfirst($newRole) . ' already exists (' . esc($existingName) . '). Demote them first before promoting someone else.'
-            )->withInput();
-        }
+        if (in_array($newRole, ['captain', 'secretary'], true)) {
+            if ($newRole === 'secretary') {
+                // Only allow one non-default (non-admin) secretary at a time.
+                // The seeded default account username is `secretary_admin` and must not be revoked.
+                // Also require that only the default admin may assign a resident as secretary.
+                if (session()->get('username') !== 'secretary_admin') {
+                    return redirect()->back()->with('error', 'Only the default secretary admin can assign another secretary.')->withInput();
+                }
 
-        // Block self-promotion to secretary (secretary can't replace themselves this way)
-        if ($newRole === 'secretary' && (int) session()->get('user_id') === $targetId) {
-            return redirect()->back()->with('error', 'You cannot promote your own account.')->withInput();
+                $existingNonAdmin = $this->userModel
+                    ->where('role', 'secretary')
+                    ->where('status', 'active')
+                    ->where('username !=', 'secretary_admin')
+                    ->first();
+
+                if ($existingNonAdmin) {
+                    $existingName = trim($existingNonAdmin['first_name'] . ' ' . $existingNonAdmin['last_name']);
+                    return redirect()->back()->with(
+                        'error',
+                        'An active Secretary already exists (' . esc($existingName) . '). Demote them first before promoting someone else.'
+                    )->withInput();
+                }
+
+                // Block self-promotion to secretary (secretary can't replace themselves this way)
+                if ((int) session()->get('user_id') === $targetId) {
+                    return redirect()->back()->with('error', 'You cannot promote your own account.')->withInput();
+                }
+            } else {
+                $existing = $this->userModel->getActiveByRole($newRole);
+                if ($existing) {
+                    $existingName = trim($existing['first_name'] . ' ' . $existing['last_name']);
+                    return redirect()->back()->with(
+                        'error',
+                        'An active ' . ucfirst($newRole) . ' already exists (' . esc($existingName) . '). Demote them first before promoting someone else.'
+                    )->withInput();
+                }
+            }
         }
 
         // Promote
@@ -564,6 +589,11 @@ class AuthController extends BaseController
         $target = $this->userModel->find($targetId);
         if (! $target) {
             return redirect()->back()->with('error', 'User not found.');
+        }
+
+        // Prevent demotion/deletion of the seeded default secretary admin
+        if (! empty($target['username']) && $target['username'] === 'secretary_admin') {
+            return redirect()->back()->with('error', 'The default secretary account cannot be demoted or revoked.');
         }
 
         $officialRoles = ['captain', 'secretary', 'sk'];
@@ -599,16 +629,38 @@ class AuthController extends BaseController
             return redirect()->back()->with('error', 'Invalid role selected.')->withInput();
         }
 
+        // Only the seeded default secretary admin may create a Secretary account
+        if ($role === 'secretary' && session()->get('username') !== 'secretary_admin') {
+            return redirect()->back()->with('error', 'Only the default secretary admin can create a Secretary account.')->withInput();
+        }
+
         // ── Single-instance enforcement for captain and secretary ─────────────
         if (in_array($role, ['captain', 'secretary'], true)) {
-            $existing = $this->userModel->getActiveByRole($role);
-            if ($existing) {
-                $existingName = trim($existing['first_name'] . ' ' . $existing['last_name']);
-                return redirect()->back()->with(
-                    'error',
-                    'An active ' . ucfirst($role) . ' account already exists (' . esc($existingName) . '). ' .
-                        'You must deactivate that account before creating a new one.'
-                )->withInput();
+            if ($role === 'secretary') {
+                // Allow the seeded default `secretary_admin` plus at most one additional resident secretary.
+                $existingNonAdmin = $this->userModel
+                    ->where('role', 'secretary')
+                    ->where('status', 'active')
+                    ->where('username !=', 'secretary_admin')
+                    ->first();
+
+                if ($existingNonAdmin) {
+                    $existingName = trim($existingNonAdmin['first_name'] . ' ' . $existingNonAdmin['last_name']);
+                    return redirect()->back()->with(
+                        'error',
+                        'An active Secretary account already exists (' . esc($existingName) . '). You must deactivate that account before creating a new one.'
+                    )->withInput();
+                }
+            } else {
+                $existing = $this->userModel->getActiveByRole($role);
+                if ($existing) {
+                    $existingName = trim($existing['first_name'] . ' ' . $existing['last_name']);
+                    return redirect()->back()->with(
+                        'error',
+                        'An active ' . ucfirst($role) . ' account already exists (' . esc($existingName) . '). ' .
+                            'You must deactivate that account before creating a new one.'
+                    )->withInput();
+                }
             }
         }
 

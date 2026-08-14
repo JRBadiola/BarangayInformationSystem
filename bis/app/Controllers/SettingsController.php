@@ -247,6 +247,11 @@ class SettingsController extends BaseController
             return redirect()->back()->with('error', 'User not found.');
         }
 
+        // Prevent deactivating the seeded default secretary admin
+        if (! empty($target['username']) && $target['username'] === 'secretary_admin') {
+            return redirect()->back()->with('error', 'The default secretary account cannot be deactivated.');
+        }
+
         $this->userModel->update($targetUserId, ['status' => 'rejected']);
 
         return redirect()->to('/secretary/create-account')

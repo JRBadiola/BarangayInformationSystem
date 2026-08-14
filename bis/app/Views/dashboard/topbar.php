@@ -451,11 +451,55 @@
                             badge.textContent = count > 9 ? '9+' : count;
                             badge.style.display = count > 0 ? 'flex' : 'none';
                         }
-                    })
-                    .catch(() => {});
+                    }).catch(() => {});
             }
             pollUnread();
-            setInterval(pollUnread, 30000); // every 30 seconds
+            setInterval(pollUnread, 30000);
+        })();
+    </script>
+
+<?php elseif (in_array(session()->get('role'), ['secretary', 'captain'])): ?>
+    <style>
+        .db-notif-count {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            min-width: 17px;
+            height: 17px;
+            background: #e6a800;
+            color: #fff;
+            font-size: 10px;
+            font-weight: 700;
+            border-radius: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 4px;
+            pointer-events: none;
+        }
+    </style>
+    <script>
+        (function() {
+            const _role = '<?= esc(session()->get('role')) ?>';
+
+            function pollAdmin() {
+                fetch('/' + _role + '/notifications/poll', {
+                        credentials: 'same-origin'
+                    })
+                    .then(r => r.json())
+                    .then(data => {
+                        const count = data.unread || 0;
+                        const dot = document.getElementById('topbarNotifDot');
+                        const badge = document.getElementById('topbarUnreadCount');
+                        if (dot) dot.style.display = count > 0 ? '' : 'none';
+                        if (badge) {
+                            badge.textContent = count > 9 ? '9+' : count;
+                            badge.style.display = count > 0 ? 'flex' : 'none';
+                        }
+                    }).catch(() => {});
+            }
+            pollAdmin();
+            setInterval(pollAdmin, 60000); // every 60 seconds for admin
         })();
     </script>
 <?php endif; ?>

@@ -4,6 +4,8 @@ namespace App\Controllers;
 
 use App\Controllers\BaseController;
 use App\Models\ClearanceRequestModel;
+use App\Models\DocumentTemplateModel;
+use App\Models\BarangaySettingsModel;
 use App\Models\HouseholdModel;
 use App\Models\HouseholdMemberModel;
 use App\Models\NotificationModel;
@@ -211,23 +213,35 @@ class ClearanceController extends BaseController
             ? strtoupper(trim(($captainRow['first_name'] ?? '') . ' ' . ($captainRow['middle_name'] ?? '') . ' ' . ($captainRow['last_name'] ?? '')))
             : 'PUNONG BARANGAY';
 
+        $templateModel = new DocumentTemplateModel();
+        $templates     = $templateModel->tableExists()
+            ? $templateModel->getTemplatesIndexedByKey()
+            : $templateModel->getDefaultTemplates();
+
+        $settingsModel   = new BarangaySettingsModel();
+        $barangaySettings = $settingsModel->getAll();
+        // getAll() always overrides captain_name with the live appointed captain
+        $captainName = $barangaySettings['captain_name'] ?: $captainName;
+
         $viewFile = ($role === 'captain')
             ? 'dashboard/captain/clearance'
             : 'dashboard/secretary/clearance';
 
         return view($viewFile, [
-            'residents'     => $residents,
-            'pending'       => $pending,
-            'approved'      => $approved,
-            'rejected'      => $rejected,
-            'total'         => $total,
-            'filteredTotal' => $filteredTotal,
-            'perPage'       => $perPage,
-            'currentPage'   => $page,
-            'statusFilter'  => $statusFilter,
-            'typeFilter'    => $typeFilter,
-            'search'        => $search,
-            'captainName'   => $captainName,
+            'residents'        => $residents,
+            'pending'          => $pending,
+            'approved'         => $approved,
+            'rejected'         => $rejected,
+            'total'            => $total,
+            'filteredTotal'    => $filteredTotal,
+            'perPage'          => $perPage,
+            'currentPage'      => $page,
+            'statusFilter'     => $statusFilter,
+            'typeFilter'       => $typeFilter,
+            'search'           => $search,
+            'captainName'      => $captainName,
+            'templates'        => $templates,
+            'barangaySettings' => $barangaySettings,
         ]);
     }
 
@@ -265,13 +279,19 @@ class ClearanceController extends BaseController
             ? strtoupper(trim(($captainRow['first_name'] ?? '') . ' ' . ($captainRow['middle_name'] ?? '') . '. ' . ($captainRow['last_name'] ?? '')))
             : 'PUNONG BARANGAY';
 
+        $settingsModel    = new BarangaySettingsModel();
+        $barangaySettings = $settingsModel->getAll();
+        // getAll() always overrides captain_name with the live appointed captain
+        $captainName = $barangaySettings['captain_name'] ?: $captainName;
+
         return view('dashboard/captain/clearance_detail', [
-            'role'        => $role,
-            'user'        => $user,
-            'household'   => $household,
-            'requests'    => $requests,
-            'requestId'   => $userId,
-            'captainName' => $captainName,
+            'role'             => $role,
+            'user'             => $user,
+            'household'        => $household,
+            'requests'         => $requests,
+            'requestId'        => $userId,
+            'captainName'      => $captainName,
+            'barangaySettings' => $barangaySettings,
         ]);
     }
 

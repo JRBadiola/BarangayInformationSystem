@@ -493,6 +493,18 @@
         });
         // Set the active Punong Barangay name
         BisDoc.setCaptain('<?= addslashes($captainName ?? 'PUNONG BARANGAY') ?>');
+        // Set dynamic barangay identity (from barangay_settings table)
+        BisDoc.setBarangay(<?= json_encode([
+                                'barangay_name' => $barangaySettings['barangay_name'] ?? 'BARANGAY BACOLOD',
+                                'municipality'  => $barangaySettings['municipality']  ?? 'Municipality of Bato',
+                                'province'      => $barangaySettings['province']      ?? 'Province of Camarines Sur',
+                                'region'        => $barangaySettings['region']        ?? 'Region V',
+                                'country'       => $barangaySettings['country']       ?? 'Republic of the Philippines',
+                                'full_address'  => $barangaySettings['full_address']  ?? 'Barangay Bacolod, Bato, Camarines Sur',
+                                'office_header' => $barangaySettings['office_header'] ?? 'OFFICE OF THE PUNONG BARANGAY',
+                                'captain_name'  => $captainName ?? ($barangaySettings['captain_name'] ?? 'PUNONG BARANGAY'),
+                                'captain_title' => $barangaySettings['captain_title'] ?? 'Punong Barangay',
+                            ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>);
 
         // Track currently displayed doc for print
         let _currentDoc = {
