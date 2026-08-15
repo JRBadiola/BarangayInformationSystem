@@ -21,6 +21,11 @@ $routes->get('/faqs',           'UIController::faqs');
 $routes->get('/privacy-policy', 'UIController::privacy_policy');
 $routes->get('/terms',          'UIController::terms_of_use');
 
+// Public chatbot API (for residents without login)
+$routes->post('/api/chatbot/chat',        'ChatbotController::chat');
+$routes->post('/api/chatbot/save-log',    'ChatbotController::saveLog');
+$routes->get('/api/chatbot/logs',         'ChatbotController::getLogs');
+
 // Public signup — Resident and SK only (Captain/Secretary/Treasurer are created by admin)
 $routes->get('/signup',           'UIController::create_acc');
 $routes->get('/signup/(:alpha)',  'UIController::create_acc/$1'); // keep for backwards compat
@@ -47,6 +52,9 @@ $routes->group('/captain', ['filter' => ['auth', 'role:captain']], function ($ro
     $routes->get('reports',                      'UIController::captain_reports');
     $routes->get('reports/export',               'ReportsExportController::export/captain');
     $routes->get('chatbot',                      'UIController::captain_chatbot');
+    $routes->post('chatbot/api/chat',           'ChatbotController::chat');
+    $routes->post('chatbot/api/save-log',       'ChatbotController::saveLog');
+    $routes->get('chatbot/api/logs',            'ChatbotController::getLogs');
     $routes->get('blotter',                      'BlotterController::adminIndex/captain');
     $routes->get('blotter/(:num)',               'BlotterController::show/$1');
     $routes->post('blotter/status/(:num)',        'BlotterController::updateStatus/$1');
@@ -112,6 +120,9 @@ $routes->group('/secretary', ['filter' => ['auth', 'role:secretary']], function 
     $routes->get('reports',            'UIController::secretary_reports');
     $routes->get('reports/export',     'ReportsExportController::export/secretary');
     $routes->get('chatbot',            'UIController::secretary_chatbot');
+    $routes->post('chatbot/api/chat',           'ChatbotController::chat');
+    $routes->post('chatbot/api/save-log',       'ChatbotController::saveLog');
+    $routes->get('chatbot/api/logs',            'ChatbotController::getLogs');
     $routes->get('blotter',            'BlotterController::adminIndex/secretary');
     $routes->get('blotter/(:num)',     'BlotterController::show/$1');
     $routes->post('blotter/status/(:num)',  'BlotterController::updateStatus/$1');
@@ -186,6 +197,9 @@ $routes->group('/resident', ['filter' => ['auth', 'role:resident']], function ($
     $routes->post('clearance/cancel/(:num)', 'ClearanceController::cancel/$1');
     $routes->get('profile',       'UIController::resident_profile');
     $routes->get('chatbot',       'UIController::resident_chatbot');
+    $routes->post('chatbot/api/chat',           'ChatbotController::chat');
+    $routes->post('chatbot/api/save-log',       'ChatbotController::saveLog');
+    $routes->get('chatbot/api/logs',            'ChatbotController::getLogs');
     $routes->get('notifications', 'UIController::resident_notifications');
     $routes->get('notifications/poll',        'NotificationController::poll');
     $routes->post('notifications/read/(:num)', 'NotificationController::markRead/$1');
@@ -219,6 +233,10 @@ $routes->group('/sk', ['filter' => ['auth', 'role:sk']], function ($routes) {
     $routes->post('programs/store',       'SkController::storeProgram');
     $routes->post('programs/update/(:num)', 'SkController::updateProgram/$1');
     $routes->post('programs/delete/(:num)', 'SkController::deleteProgram/$1');
+    $routes->get('chatbot',               'UIController::sk_chatbot');
+    $routes->post('chatbot/api/chat',           'ChatbotController::chat');
+    $routes->post('chatbot/api/save-log',       'ChatbotController::saveLog');
+    $routes->get('chatbot/api/logs',            'ChatbotController::getLogs');
     $routes->get('reports',               'UIController::sk_reports');
     $routes->get('settings',              'UIController::sk_settings');
 
