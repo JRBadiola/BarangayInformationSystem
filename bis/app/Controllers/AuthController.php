@@ -513,12 +513,24 @@ class AuthController extends BaseController
             return redirect()->back()->with('error', 'Selected user is not an eligible active resident.')->withInput();
         }
 
-        // Age check — must be 18+ from household DOB
+        // Age check — use the resident's own DOB (from household_members if a member,
+        // otherwise the household head row).
         if (! empty($target['household_no'])) {
             $db  = \Config\Database::connect();
-            $hh  = $db->table('households')->where('household_no', $target['household_no'])->get()->getRowArray();
-            if ($hh && ! empty($hh['date_of_birth'])) {
-                $age = (int) date_diff(date_create($hh['date_of_birth']), date_create('today'))->y;
+
+            // Try to find this person as a household member first
+            $memberRow = $db->table('household_members')
+                ->where('household_no', $target['household_no'])
+                ->where('UPPER(TRIM(first_name))', strtoupper(trim($target['first_name'] ?? '')))
+                ->where('UPPER(TRIM(last_name))',  strtoupper(trim($target['last_name']  ?? '')))
+                ->get()->getRowArray();
+
+            $dob = !empty($memberRow['date_of_birth'])
+                ? $memberRow['date_of_birth']
+                : ($db->table('households')->where('household_no', $target['household_no'])->get()->getRowArray()['date_of_birth'] ?? null);
+
+            if (! empty($dob)) {
+                $age = (int) date_diff(date_create($dob), date_create('today'))->y;
                 if ($age < 18) {
                     return redirect()->back()->with('error', 'The selected resident must be at least 18 years old.')->withInput();
                 }

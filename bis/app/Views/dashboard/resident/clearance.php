@@ -599,7 +599,7 @@
 
 <body class="db-body">
     <?php
-    $role      = 'resident';
+    $role      = in_array(session()->get('role'), ['sk']) ? session()->get('role') : 'resident';
     $active    = 'clearance';
     $pageTitle = 'My Clearances';
     include(APPPATH . 'Views/dashboard/sidebar.php');
@@ -787,7 +787,7 @@
                 </button>
             </div>
 
-            <form action="/resident/clearance/store" method="post" id="clearanceForm">
+            <form action="/<?= $role ?>/clearance/store" method="post" id="clearanceForm">
                 <?= csrf_field() ?>
                 <div class="clr-form-body" style="max-height:72vh;overflow-y:auto;">
 
@@ -941,7 +941,7 @@
 
         function confirmCancel(id, docType) {
             document.getElementById('cancelDocType').textContent = docType;
-            document.getElementById('cancelForm').action = '/resident/clearance/cancel/' + id;
+            document.getElementById('cancelForm').action = '/<?= $role ?>/clearance/cancel/' + id;
             openModal('cancelModal');
         }
 

@@ -227,7 +227,12 @@
                      </div>
                  <?php endif; ?>
                  <div>
-                     <h2>Hello, <?= esc(session()->get('full_name') ?? session()->get('username') ?? 'Resident') ?> 👋</h2>
+                     <?php
+                        $firstName   = session()->get('first_name') ?? '';
+                        $lastName    = session()->get('last_name')  ?? '';
+                        $displayName = trim("$firstName $lastName") ?: (session()->get('username') ?? 'Resident');
+                        ?>
+                     <h2>Hello, <?= esc($displayName) ?> 👋</h2>
                      <p>Barangay Bacolod, Bato, Camarines Sur — Barangay Information System</p>
                  </div>
                  <div class="db-welcome-icon"><i class="fas fa-users"></i></div>
@@ -333,38 +338,58 @@
                          <tr>
                              <th>#</th>
                              <th>Document</th>
+                             <th>For</th>
                              <th>Purpose</th>
                              <th>Date Filed</th>
+                             <th>Est. Release</th>
                              <th>Status</th>
                          </tr>
                      </thead>
                      <tbody>
-                         <?php if (empty($recentRequests)): ?>
+                         <?php
+                            $totalRequests  = $totalRequests  ?? 0;
+                            $approved       = $approved       ?? 0;
+                            $pending        = $pending        ?? 0;
+                            $blotterCount   = $blotterCount   ?? 0;
+                            $recentRequests = $recentRequests ?? [];
+
+                            $badgeMap = [
+                                'pending'  => 'db-badge--pending',
+                                'approved' => 'db-badge--approved',
+                                'rejected' => 'db-badge--danger',
+                                'released' => 'db-badge--info',
+                            ];
+                            if (empty($recentRequests)): ?>
                              <tr>
-                                 <td colspan="5" style="text-align:center;padding:28px;color:#9aa0b4;">
+                                 <td colspan="7" style="text-align:center;padding:28px;color:#9aa0b4;">
                                      <i class="fas fa-file-alt" style="font-size:22px;display:block;margin-bottom:8px;color:#d0d5e8;"></i>
                                      No requests yet. <a href="/resident/clearance" style="color:#1d2448;font-weight:600;">Request a document</a> to get started.
                                  </td>
                              </tr>
                          <?php else: ?>
-                             <?php
-                                $badgeMap = [
-                                    'pending'  => 'db-badge--pending',
-                                    'approved' => 'db-badge--approved',
-                                    'rejected' => 'db-badge--danger',
-                                    'released' => 'db-badge--info',
-                                ];
-                                foreach ($recentRequests as $r):
+                             <?php foreach ($recentRequests as $r):
                                     $badgeClass = $badgeMap[$r['status']] ?? 'db-badge--pending';
                                     $label      = ucfirst($r['status']);
                                     $filed      = date('M d, Y', strtotime($r['created_at']));
+                                    $estRelease = !empty($r['est_release_date'])
+                                        ? date('M d, Y', strtotime($r['est_release_date']))
+                                        : '—';
                                 ?>
                                  <tr>
                                      <td><strong>#<?= str_pad($r['id'], 3, '0', STR_PAD_LEFT) ?></strong></td>
                                      <td><?= esc($r['document_type']) ?></td>
+                                     <td style="font-size:12px;color:#6b7280;"><?= esc($r['for_member'] ?? '—') ?></td>
                                      <td><?= esc($r['purpose']) ?></td>
                                      <td><?= $filed ?></td>
-                                     <td><span class="db-badge <?= $badgeClass ?>"><?= $label ?></span></td>
+                                     <td style="font-size:12px;color:#6b7280;"><?= $estRelease ?></td>
+                                     <td>
+                                         <span class="db-badge <?= $badgeClass ?>"><?= $label ?></span>
+                                         <?php if ($r['status'] === 'rejected' && !empty($r['remarks'])): ?>
+                                             <span title="<?= esc($r['remarks']) ?>" style="cursor:help;color:#dc3545;font-size:11px;display:block;margin-top:2px;">
+                                                 <i class="fas fa-info-circle"></i> <?= esc(mb_strimwidth($r['remarks'], 0, 40, '…')) ?>
+                                             </span>
+                                         <?php endif; ?>
+                                     </td>
                                  </tr>
                              <?php endforeach; ?>
                          <?php endif; ?>

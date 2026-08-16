@@ -290,39 +290,72 @@ class BlotterController extends BaseController
         return $h * 60 + $m;
     }
 
-    // ── Resident: submit blotter report ──────────────────────────────────────
+    // ── Resident / SK: submit blotter report ─────────────────────────────────
 
     public function store()
     {
         $userId    = (int) session()->get('user_id');
         $userModel = new UserModel();
         $user      = $userModel->find($userId);
+        $role      = session()->get('role'); // 'resident' or 'sk'
 
         $incidentType    = $this->request->getPost('incident_type');
         $incidentDate    = $this->request->getPost('incident_date');
-        $incidentTime    = $this->request->getPost('incident_time');
-        $location        = $this->request->getPost('location');
-        $personsInvolved = $this->request->getPost('persons_involved');
         $narrative       = trim($this->request->getPost('narrative') ?? '');
+        $respondentName  = trim($this->request->getPost('respondent_name') ?? '');
+        $contactNumber   = trim($this->request->getPost('contact_number') ?? '');
+        $appointmentDate = $this->request->getPost('appointment_date') ?: null;
+        $appointmentTime = $this->request->getPost('appointment_time') ?: null;
+
+        // Build complainant name from form fields if provided, else from session
+        $cLast   = trim($this->request->getPost('complainant_last_name')   ?? ($user['last_name']  ?? ''));
+        $cFirst  = trim($this->request->getPost('complainant_first_name')  ?? ($user['first_name'] ?? ''));
+        $cEmail  = trim($this->request->getPost('complainant_email')       ?? ($user['email']      ?? ''));
+        $cName   = trim("$cFirst $cLast") ?: trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? ''));
 
         if (empty($incidentType) || empty($narrative)) {
             return redirect()->back()->with('blotter_error', 'Please fill in the required fields.')->withInput();
         }
 
-        $this->model->insert([
-            'complainant_user_id' => $userId,
-            'complainant_name'    => trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? '')),
-            'complainant_email'   => $user['email'] ?? '',
-            'incident_type'       => $incidentType,
-            'incident_date'       => $incidentDate ?: null,
-            'incident_time'       => $incidentTime ?: null,
-            'location'            => $location ?: null,
-            'persons_involved'    => $personsInvolved ?: null,
-            'narrative'           => $narrative,
-            'status'              => 'pending',
-        ]);
+        $insert = [
+            'complainant_user_id'  => $userId,
+            'complainant_name'     => $cName,
+            'complainant_email'    => $cEmail ?: ($user['email'] ?? ''),
+            'complainant_contact'  => $contactNumber ?: null,
+            'incident_type'        => $incidentType,
+            'incident_date'        => $incidentDate ?: null,
+            'narrative'            => $narrative,
+            'status'               => 'pending',
+        ];
 
-        return redirect()->to('/resident/dashboard')->with('success', 'Blotter report submitted successfully. The barangay will contact you shortly.');
+        if ($respondentName !== '') {
+            $insert['respondent_name'] = $respondentName;
+        }
+        if ($appointmentDate) {
+            $insert['appointment_date'] = $appointmentDate;
+            $insert['appointment_time'] = $appointmentTime ?: null;
+        }
+
+        $this->model->insert($insert);
+
+        // Notify secretary/captain about the new blotter
+        $db = \Config\Database::connect();
+        $officials = $db->table('users')
+            ->whereIn('role', ['secretary', 'captain'])
+            ->where('status', 'active')
+            ->get()->getResultArray();
+        foreach ($officials as $off) {
+            \App\Models\NotificationModel::push(
+                (int) $off['id'],
+                'new_blotter',
+                'New Blotter Report',
+                $cName . ' filed a blotter report: ' . $incidentType . '.',
+                '/' . $off['role'] . '/blotter'
+            );
+        }
+
+        $redirectBase = $role === 'sk' ? '/sk/blotter' : '/resident/dashboard';
+        return redirect()->to($redirectBase)->with('success', 'Blotter report submitted successfully. The barangay will contact you shortly.');
     }
 
     // ── Admin: list all blotter reports ──────────────────────────────────────

@@ -625,24 +625,46 @@ class UIController extends BaseController
         $userModel = new \App\Models\UserModel();
         $db        = \Config\Database::connect();
 
-        // Eligible residents: active, age 18+ from household census
-        // Join to households to get date_of_birth for age check
-        $today = date('Y-m-d');
-        $cutoff = date('Y-m-d', strtotime('-18 years', strtotime($today)));
-
-        // Fetch residents (active, email verified) who have a household link with DOB <= cutoff
-        $eligibleResidents = $db->table('users u')
+        // Eligible residents: active, age 18+
+        // Look up each resident's personal DOB — try household_members first
+        // (resident may be a member, not the head), fall back to households head row.
+        $residents = $db->table('users u')
             ->select('u.id, u.last_name, u.first_name, u.middle_name, u.username, u.email, u.household_no,
-                      h.date_of_birth,
-                      TIMESTAMPDIFF(YEAR, h.date_of_birth, CURDATE()) AS age')
+                      h.date_of_birth  AS head_dob,
+                      m.date_of_birth  AS member_dob')
             ->join('households h', 'h.household_no = u.household_no', 'inner')
+            ->join(
+                'household_members m',
+                "m.household_no = u.household_no
+                 AND UPPER(TRIM(m.first_name)) = UPPER(TRIM(u.first_name))
+                 AND UPPER(TRIM(m.last_name))  = UPPER(TRIM(u.last_name))",
+                'left'
+            )
             ->where('u.role', 'resident')
             ->where('u.status', 'active')
-            ->where('h.date_of_birth IS NOT NULL')
-            ->where('h.date_of_birth <=', $cutoff)
             ->orderBy('u.last_name', 'ASC')
             ->orderBy('u.first_name', 'ASC')
             ->get()->getResultArray();
+
+        // Compute accurate age: prefer member DOB, fall back to head DOB
+        $eligibleResidents = [];
+        foreach ($residents as $r) {
+            $dob = !empty($r['member_dob']) ? $r['member_dob']
+                : (!empty($r['head_dob'])  ? $r['head_dob']  : null);
+
+            if (empty($dob)) continue;
+
+            // Accurate age: TIMESTAMPDIFF logic in PHP
+            $birthDate = date_create($dob);
+            $today     = date_create('today');
+            $age       = (int) date_diff($birthDate, $today)->y;
+
+            if ($age < 18) continue; // must be 18+
+
+            $r['age']         = $age;
+            $r['date_of_birth'] = $dob;
+            $eligibleResidents[] = $r;
+        }
 
         $activeSecretaries = $userModel
             ->select('id, last_name, first_name, middle_name, username, email')
@@ -684,7 +706,37 @@ class UIController extends BaseController
     // ── Resident ──────────────────────────────────────
     public function resident_dashboard()
     {
-        return view('dashboard/resident');
+        $userId = (int) session()->get('user_id');
+        $db     = \Config\Database::connect();
+
+        // ── Clearance / document request stats ────────────────────────────────
+        $totalRequests = (int) $db->table('clearance_requests')
+            ->where('user_id', $userId)->countAllResults();
+
+        $approved = (int) $db->table('clearance_requests')
+            ->where('user_id', $userId)->where('status', 'approved')->countAllResults();
+
+        $pending = (int) $db->table('clearance_requests')
+            ->where('user_id', $userId)->where('status', 'pending')->countAllResults();
+
+        // ── Blotter cases filed by this resident ──────────────────────────────
+        $blotterCount = (int) $db->table('blotter_reports')
+            ->where('complainant_user_id', $userId)->countAllResults();
+
+        // ── 5 most recent document requests ───────────────────────────────────
+        $recentRequests = $db->table('clearance_requests')
+            ->where('user_id', $userId)
+            ->orderBy('created_at', 'DESC')
+            ->limit(5)
+            ->get()->getResultArray();
+
+        return view('dashboard/resident', [
+            'totalRequests'  => $totalRequests,
+            'approved'       => $approved,
+            'pending'        => $pending,
+            'blotterCount'   => $blotterCount,
+            'recentRequests' => $recentRequests,
+        ]);
     }
     public function resident_clearance()
     {
@@ -862,14 +914,14 @@ class UIController extends BaseController
         $allYouth = $db->query("({$headSql}) UNION ALL ({$memberSql})")->getResultArray();
 
         $total    = count($allYouth);
-        $male     = count(array_filter($allYouth, fn($r) => strtolower($r['gender'] ?? '') === 'male'));
-        $female   = count(array_filter($allYouth, fn($r) => strtolower($r['gender'] ?? '') === 'female'));
+        $male     = count(array_filter($allYouth, fn($r) => strtolower(trim($r['gender'] ?? '')) === 'male'));
+        $female   = count(array_filter($allYouth, fn($r) => strtolower(trim($r['gender'] ?? '')) === 'female'));
         $oos      = count(array_filter($allYouth, fn($r) =>
         stripos($r['occupation'] ?? '', 'out-of-school') !== false ||
             stripos($r['occupation'] ?? '', 'osy') !== false));
         $employed = count(array_filter($allYouth, fn($r) => (function ($occ) {
-            $o = strtolower($occ ?? '');
-            return $o !== '' && $o !== 'none' && $o !== 'n/a'
+            $o = strtolower(trim($occ ?? ''));
+            return $o !== '' && $o !== 'none' && $o !== 'n/a' && $o !== '-'
                 && strpos($o, 'student') === false
                 && strpos($o, 'unemploy') === false
                 && strpos($o, 'out-of-school') === false
@@ -880,12 +932,13 @@ class UIController extends BaseController
         usort($allYouth, fn($a, $b) => strcmp($b['created_at'] ?? '', $a['created_at'] ?? ''));
         $recentYouth = array_slice($allYouth, 0, 5);
         foreach ($recentYouth as &$y) {
-            $y['age'] = (int) date_diff(date_create($y['date_of_birth']), date_create('today'))->y;
-            $occ = strtolower($y['occupation'] ?? '');
+            $dob = $y['date_of_birth'] ?? null;
+            $y['age'] = !empty($dob) ? (int) date_diff(date_create($dob), date_create('today'))->y : '—';
+            $occ = strtolower(trim($y['occupation'] ?? ''));
             if (str_contains($occ, 'student'))                                             $y['status'] = 'Student';
             elseif (str_contains($occ, 'unemploy'))                                        $y['status'] = 'Unemployed';
             elseif (str_contains($occ, 'out-of-school') || str_contains($occ, 'osy'))      $y['status'] = 'Out-of-School';
-            elseif ($occ !== '' && $occ !== 'none' && $occ !== 'n/a')                      $y['status'] = 'Employed';
+            elseif ($occ !== '' && $occ !== 'none' && $occ !== 'n/a' && $occ !== '-')      $y['status'] = 'Employed';
             else                                                                            $y['status'] = '—';
         }
         unset($y);
@@ -901,7 +954,7 @@ class UIController extends BaseController
                 'female'   => $female,
                 'oos'      => $oos,
                 'employed' => $employed,
-                'students' => count(array_filter($allYouth, fn($r) => stripos($r['occupation'] ?? '', 'student') !== false)),
+                'students' => count(array_filter($allYouth, fn($r) => stripos(trim($r['occupation'] ?? ''), 'student') !== false)),
                 'programs' => $progCounts['Active'],
             ],
             'recentYouth' => $recentYouth,
@@ -969,6 +1022,7 @@ class UIController extends BaseController
         $youthMin = date('Y-m-d', strtotime('-30 years'));
 
         // UNION: household heads + members aged 15–30
+        // Members now include gender (column exists in household_members)
         $headSql = "SELECT h.date_of_birth, h.gender, h.occupation
             FROM households h
             WHERE h.date_of_birth IS NOT NULL
@@ -986,11 +1040,11 @@ class UIController extends BaseController
 
         // Helper to classify occupation into status
         $classifyStatus = function (string $occ): string {
-            $o = strtolower($occ);
+            $o = strtolower(trim($occ));
             if (str_contains($o, 'student'))                                         return 'Student';
             if (str_contains($o, 'unemploy'))                                        return 'Unemployed';
             if (str_contains($o, 'out-of-school') || str_contains($o, 'osy'))        return 'Out-of-School';
-            if ($o !== '' && $o !== 'none' && $o !== 'n/a')                          return 'Employed';
+            if ($o !== '' && $o !== 'none' && $o !== 'n/a' && $o !== '-')            return 'Employed';
             return '';
         };
 
@@ -1017,31 +1071,35 @@ class UIController extends BaseController
         $totals = ['total' => 0, 'male' => 0, 'female' => 0, 'student' => 0, 'employed' => 0, 'unemployed' => 0, 'oos' => 0];
 
         foreach ($allYouth as $y) {
-            $age = (int) date_diff(date_create($y['date_of_birth']), date_create('today'))->y;
-            $g   = strtolower($y['gender'] ?? '');
-            $s   = $classifyStatus($y['occupation'] ?? '');
+            // Accurate age: use date_diff which accounts for birthday in current year
+            $dob = $y['date_of_birth'] ?? null;
+            if (empty($dob)) continue;
+            $age = (int) date_diff(date_create($dob), date_create('today'))->y;
+
+            $g = strtolower(trim($y['gender'] ?? ''));
+            $s = $classifyStatus($y['occupation'] ?? '');
 
             foreach ($groups as $label => $range) {
                 if ($age >= $range['min'] && $age <= $range['max']) {
                     $d = &$demographics[$label];
                     $d['total']++;
-                    if ($g === 'male')    $d['male']++;
-                    if ($g === 'female')  $d['female']++;
-                    if ($s === 'Student')       $d['student']++;
-                    if ($s === 'Employed')       $d['employed']++;
-                    if ($s === 'Unemployed')     $d['unemployed']++;
-                    if ($s === 'Out-of-School')  $d['oos']++;
+                    if ($g === 'male')               $d['male']++;
+                    if ($g === 'female')             $d['female']++;
+                    if ($s === 'Student')            $d['student']++;
+                    if ($s === 'Employed')           $d['employed']++;
+                    if ($s === 'Unemployed')         $d['unemployed']++;
+                    if ($s === 'Out-of-School')      $d['oos']++;
                     break;
                 }
             }
 
             $totals['total']++;
-            if ($g === 'male')   $totals['male']++;
-            if ($g === 'female') $totals['female']++;
-            if ($s === 'Student')       $totals['student']++;
-            if ($s === 'Employed')       $totals['employed']++;
-            if ($s === 'Unemployed')     $totals['unemployed']++;
-            if ($s === 'Out-of-School')  $totals['oos']++;
+            if ($g === 'male')               $totals['male']++;
+            if ($g === 'female')             $totals['female']++;
+            if ($s === 'Student')            $totals['student']++;
+            if ($s === 'Employed')           $totals['employed']++;
+            if ($s === 'Unemployed')         $totals['unemployed']++;
+            if ($s === 'Out-of-School')      $totals['oos']++;
         }
 
         // Programs from DB
@@ -1063,5 +1121,16 @@ class UIController extends BaseController
     public function sk_settings()
     {
         return view('dashboard/sk/settings');
+    }
+
+    public function sk_clearance()
+    {
+        // Delegate to the clearance controller's resident logic — it reads user_id from session
+        return (new \App\Controllers\ClearanceController())->residentIndex();
+    }
+
+    public function sk_blotter()
+    {
+        return view('dashboard/sk/blotter');
     }
 }

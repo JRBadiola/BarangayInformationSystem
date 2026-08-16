@@ -29,10 +29,13 @@ $menus = [
         ['icon' => 'fas fa-bell',            'label' => 'Notifications',   'key' => 'notif',       'href' => '/resident/notifications'],
     ],
     'sk' => [
-        ['icon' => 'fas fa-chart-bar',       'label' => 'Dashboard',         'key' => 'reports',     'href' => '/sk/reports'],
-        ['icon' => 'fas fa-id-card',         'label' => 'SK Profiling',    'key' => 'profiling',   'href' => '/sk/profiling'],
+        ['icon' => 'fas fa-tachometer-alt', 'label' => 'Dashboard',         'key' => 'dashboard',  'href' => '/sk/dashboard'],
+        ['icon' => 'fas fa-id-card',         'label' => 'SK Profiling',     'key' => 'profiling',  'href' => '/sk/profiling'],
         ['icon' => 'fas fa-calendar-alt',    'label' => 'Programs & Events', 'key' => 'programs',   'href' => '/sk/programs'],
-        ['icon' => 'fas fa-cog',             'label' => 'Settings',        'key' => 'settings',    'href' => '/sk/settings'],
+        ['icon' => 'fas fa-chart-bar',       'label' => 'Reports',           'key' => 'reports',    'href' => '/sk/reports'],
+        ['icon' => 'fas fa-file-alt',        'label' => 'Document Request',  'key' => 'clearance',  'href' => '/sk/clearance'],
+        ['icon' => 'fas fa-book',            'label' => 'Blotter Report',    'key' => 'blotter',    'href' => '/sk/blotter'],
+        ['icon' => 'fas fa-cog',             'label' => 'Settings',          'key' => 'settings',   'href' => '/sk/settings'],
     ],
 ];
 

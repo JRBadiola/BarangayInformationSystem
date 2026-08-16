@@ -122,7 +122,8 @@ class ClearanceController extends BaseController
                     'est_release_date'    => null,
                 ]);
 
-                return redirect()->to('/resident/clearance')->with(
+                $role = session()->get('role') === 'sk' ? 'sk' : 'resident';
+                return redirect()->to('/' . $role . '/clearance')->with(
                     'error',
                     'Your request for a Certificate of Indigency was automatically rejected. ' .
                         'Your household\'s net monthly income (₱' . number_format($totalIncome, 2) . ') ' .
@@ -146,7 +147,8 @@ class ClearanceController extends BaseController
             'est_release_date'    => $estRelease,
         ]);
 
-        return redirect()->to('/resident/clearance')->with('success', 'Request submitted successfully! Estimated release: ' . date('M d, Y', strtotime($estRelease)));
+        $role = session()->get('role') === 'sk' ? 'sk' : 'resident';
+        return redirect()->to('/' . $role . '/clearance')->with('success', 'Request submitted successfully! Estimated release: ' . date('M d, Y', strtotime($estRelease)));
     }
 
     // ── Admin (captain/secretary): list all requests — grouped by resident ───
@@ -366,6 +368,7 @@ class ClearanceController extends BaseController
         }
 
         $this->model->delete($id);
-        return redirect()->to('/resident/clearance')->with('success', 'Request cancelled successfully.');
+        $role = session()->get('role') === 'sk' ? 'sk' : 'resident';
+        return redirect()->to('/' . $role . '/clearance')->with('success', 'Request cancelled successfully.');
     }
 }

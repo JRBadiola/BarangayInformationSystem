@@ -254,6 +254,15 @@ $routes->group('/sk', ['filter' => ['auth', 'role:sk']], function ($routes) {
     $routes->get('reports',               'UIController::sk_reports');
     $routes->get('settings',              'UIController::sk_settings');
 
+    // Document requests (clearance) — same as resident flow
+    $routes->get('clearance',                    'UIController::sk_clearance');
+    $routes->post('clearance/store',             'ClearanceController::store');
+    $routes->post('clearance/cancel/(:num)',     'ClearanceController::cancel/$1');
+
+    // Blotter filing
+    $routes->get('blotter',                      'UIController::sk_blotter');
+    $routes->post('blotter/store',               'BlotterController::store');
+
     // Settings — password change via OTP
     $routes->post('settings/request-otp',     'SettingsController::requestPasswordOtp');
     $routes->post('settings/verify-otp',      'SettingsController::verifyPasswordOtp');
