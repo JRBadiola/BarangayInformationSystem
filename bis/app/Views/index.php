@@ -2205,190 +2205,8 @@
 
     <script>
         (function() {
-            const KB = [{
-                    keys: ['create account', 'sign up', 'register', 'how to register', 'new account'],
-                    answer: '📝 <strong>Creating an Account:</strong><br>1. Click <strong>Sign Up</strong> on this page or go to <em>/signup</em>.<br>2. Select your role: <strong>Resident</strong> or <strong>SK</strong>.<br>3. Fill in your name, email, username, and password.<br>4. For Residents: enter your <strong>5-digit household number</strong>.<br>5. Check your email for a <strong>6-digit verification code</strong> (valid 15 minutes).<br>6. After verifying, wait for the Captain or Secretary to approve your account.'
-                },
-                {
-                    keys: ['login', 'sign in', 'cannot login', 'account pending', 'account rejected'],
-                    answer: '🔐 <strong>Logging In:</strong><br>Go to <em>/login</em> and enter your username and password.<br><br><strong>Common issues:</strong><br>• <em>Unverified</em> — check your email for the OTP code.<br>• <em>Pending</em> — awaiting approval by the Captain or Secretary.<br>• <em>Rejected</em> — contact the barangay office.<br>• Wrong password — use <strong>Forgot Password</strong> on the login page.'
-                },
-                {
-                    keys: ['forgot password', 'reset password', 'change password', 'lost password'],
-                    answer: '🔑 <strong>Forgot Password:</strong><br>1. Click <strong>"Forgot password?"</strong> on the login page.<br>2. Enter your registered email address.<br>3. Check your email for a <strong>6-digit reset code</strong> (valid 15 minutes).<br>4. Enter the code and set your new password (minimum 8 characters).'
-                },
-                {
-                    keys: ['request clearance', 'apply clearance', 'barangay clearance', 'how to get clearance', 'clearance request'],
-                    answer: '📄 <strong>Requesting a Barangay Clearance:</strong><br>1. Log in to your account.<br>2. Go to <strong>My Clearances</strong> in the sidebar.<br>3. Click <strong>"New Request"</strong>.<br>4. Select who the document is for.<br>5. Choose <strong>Barangay Clearance</strong> and enter the purpose.<br>6. Submit — processing takes <strong>1–2 business days</strong>.<br>7. Pick up at the barangay hall when notified.'
-                },
-                {
-                    keys: ['certificate of residency', 'residency certificate', 'proof of residence'],
-                    answer: '🏠 <strong>Certificate of Residency:</strong><br>Log in → My Clearances → New Request → Select <strong>Certificate of Residency</strong>.<br>Enter the purpose and submit. Processing takes 1–2 business days.<br>This certifies you are a resident of Barangay Bacolod, Bato, Camarines Sur.'
-                },
-                {
-                    keys: ['certificate of indigency', 'indigency', 'indigent', 'low income'],
-                    answer: '💙 <strong>Certificate of Indigency:</strong><br>This document is <strong>free of charge</strong>.<br><br>⚠️ <strong>Income Qualification:</strong> Your household\'s total net monthly income must be <strong>₱12,000 or below</strong>. Requests above this limit are automatically rejected.<br><br>Log in → My Clearances → New Request → Select <strong>Certificate of Indigency</strong>.'
-                },
-                {
-                    keys: ['good moral', 'certificate of good moral'],
-                    answer: '✅ <strong>Certificate of Good Moral Character:</strong><br>Log in → My Clearances → New Request → Select <strong>Certificate of Good Moral</strong>.<br>Enter the purpose (e.g., employment, scholarship) and submit. Processing takes 1–2 business days.'
-                },
-                {
-                    keys: ['first time job seeker', 'first time job', 'ftjs'],
-                    answer: '💼 <strong>First Time Job Seeker Certificate:</strong><br>Log in → My Clearances → New Request → Select <strong>First Time Job Seekers</strong>.<br>This is <strong>free of charge</strong> under Republic Act 11261.'
-                },
-                {
-                    keys: ['what documents', 'available documents', 'types of documents', 'what can i request', 'document types'],
-                    answer: '📋 <strong>Available Documents:</strong><br>1. 🏅 Barangay Clearance<br>2. 🏠 Certificate of Residency<br>3. 💙 Certificate of Indigency (income ≤ ₱12,000/mo — FREE)<br>4. ✅ Certificate of Good Moral<br>5. 💼 First Time Job Seekers (FREE)<br><br>All processed within <strong>1–2 business days</strong>. Log in and go to <strong>My Clearances → New Request</strong>.'
-                },
-                {
-                    keys: ['fee', 'cost', 'how much', 'price', 'payment'],
-                    answer: '💰 <strong>Document Fees:</strong><br>• Barangay Clearance — standard fee (paid at pickup)<br>• Certificate of Residency — standard fee<br>• Certificate of Indigency — <strong>FREE</strong><br>• Certificate of Good Moral — standard fee<br>• First Time Job Seekers — <strong>FREE</strong><br><br>Contact the barangay office for the current fee schedule.'
-                },
-                {
-                    keys: ['file blotter', 'blotter report', 'file complaint', 'report incident', 'file a report'],
-                    answer: '📋 <strong>Filing a Blotter Report:</strong><br><strong>Without an account:</strong> Use the <strong>"File a Report"</strong> button on this page under Services.<br><br><strong>With an account:</strong> Log in → Dashboard → File Blotter.<br><br>Provide: your name, contact, incident type, date/time, location, persons involved, and a detailed description.'
-                },
-                {
-                    keys: ['hearing', 'summons', 'blotter status', 'when is my hearing'],
-                    answer: '📅 <strong>Blotter Hearing:</strong><br>After filing, the barangay reviews your report and may schedule a <strong>hearing</strong> at the Barangay Hall.<br><br>Both parties receive an official <strong>Summons Letter</strong> via email with the hearing date, time, and venue.<br><br>Hearings follow the <em>Katarungang Pambarangay Law (RA 7160)</em>.'
-                },
-                {
-                    keys: ['census', 'household number', 'household no', 'what is my household number'],
-                    answer: '🏘️ <strong>Household Number:</strong><br>Your <strong>5-digit household number</strong> is assigned by the barangay when your household is registered in the census.<br><br>You need it to register as a Resident in the BIS system. If you don\'t know it, visit the barangay hall or contact the Secretary.'
-                },
-                {
-                    keys: ['office hours', 'open', 'when is the office', 'barangay hall hours'],
-                    answer: '🕐 <strong>Office Hours:</strong><br>📅 <strong>Monday to Friday</strong><br>⏰ <strong>8:00 AM – 5:00 PM</strong><br><br>Closed on weekends and public holidays.<br><br>The BIS online portal is available <strong>24/7</strong> for submitting requests.'
-                },
-                {
-                    keys: ['contact', 'phone number', 'email', 'address', 'where is the barangay'],
-                    answer: '📍 <strong>Contact Information:</strong><br>🏢 Barangay Hall, Bacolod, Bato, Camarines Sur<br>📞 +63 (054) 000-0000<br>📧 barangaybacolod@bato.gov.ph<br>🕐 Mon–Fri, 8:00 AM – 5:00 PM'
-                },
-                {
-                    keys: ['what is bis', 'about bis', 'about the system', 'barangay information system'],
-                    answer: '🏛️ <strong>About the BIS:</strong><br>The <strong>Barangay Information System (BIS)</strong> is the official digital platform of Barangay Bacolod, Bato, Camarines Sur.<br><br>Residents can request documents, file blotter reports, and track requests online. Officials manage census, clearances, blotter cases, reports, and schedules — all in one secure system.'
-                },
-                {
-                    keys: ['privacy', 'data privacy', 'personal data', 'ra 10173'],
-                    answer: '🔒 <strong>Data Privacy:</strong><br>The BIS complies with the <strong>Data Privacy Act of 2012 (RA 10173)</strong>.<br><br>Your personal information is encrypted, stored securely, and only accessed by authorized barangay officials. It is never sold or shared without consent.<br><br>See the <strong>Privacy Policy</strong> link in the footer for full details.'
-                },
-                {
-                    keys: ['hello', 'hi', 'hey', 'good morning', 'good afternoon', 'good evening', 'kumusta'],
-                    answer: '👋 Hello! I\'m the <strong>BIS Assistant</strong> for Barangay Bacolod, Bato, Camarines Sur.<br><br>I can help you with:<br>• Requesting documents (clearance, residency, indigency)<br>• Filing blotter reports<br>• Account registration and login<br>• Understanding how the system works<br><br>What would you like to know?'
-                },
-                {
-                    keys: ['thank', 'thanks', 'salamat', 'thank you'],
-                    answer: '😊 You\'re welcome! If you have more questions, feel free to ask. You can also visit the barangay hall (Mon–Fri, 8AM–5PM) for in-person assistance.'
-                }
-            ];
-
-            function getR(msg) {
-                const m = msg.toLowerCase().trim();
-
-                // ── 1. Gibberish / too short / random characters ──────────────
-                if (m.length < 2) {
-                    return '😊 Please type a complete question so I can help you better.';
-                }
-                // Detect gibberish: mostly non-alphabetic or random repeated chars
-                const alphaRatio = (m.match(/[a-z]/g) || []).length / m.length;
-                const hasRepeats = /(.)\1{4,}/.test(m);
-                if (alphaRatio < 0.4 || hasRepeats) {
-                    return '🤖 I didn\'t quite catch that. Please type a clear question about barangay services and I\'ll be happy to help!';
-                }
-                // Detect nonsense words: no word is a real common word
-                const realWords = ['how', 'what', 'when', 'where', 'who', 'why', 'can', 'do', 'i', 'is', 'are', 'the', 'a', 'an', 'my', 'me', 'to', 'for', 'in', 'of', 'and', 'or', 'not', 'yes', 'no', 'please', 'help', 'need', 'want', 'get', 'have', 'make', 'file', 'apply', 'request', 'barangay', 'clearance', 'account', 'register', 'login', 'password', 'blotter', 'census', 'document', 'certificate', 'office', 'hours', 'fee', 'cost', 'requirement', 'household', 'resident', 'sk', 'captain', 'secretary', 'report', 'complaint', 'hearing', 'schedule', 'appointment', 'create', 'update', 'change', 'reset', 'forgot', 'lost', 'pending', 'approved', 'rejected', 'status', 'track', 'cancel', 'submit', 'upload', 'photo', 'profile', 'contact', 'address', 'phone', 'email', 'name', 'number', 'zone', 'purok', 'indigency', 'residency', 'moral', 'job', 'seeker', 'good', 'first', 'time', 'what', 'about', 'tell', 'explain', 'show', 'give', 'send', 'receive', 'pick', 'up', 'visit', 'hall', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday', 'am', 'pm', 'open', 'close', 'closed', 'available', 'free', 'paid', 'process', 'days', 'business', 'week', 'month', 'year', 'old', 'new', 'valid', 'id', 'form', 'fill', 'out', 'bring', 'need', 'required', 'requirements', 'ano', 'paano', 'saan', 'kailan', 'sino', 'bakit', 'pwede', 'hindi', 'oo', 'salamat', 'po', 'ako', 'ikaw', 'siya', 'kami', 'kayo', 'sila', 'ng', 'sa', 'at', 'na', 'ay', 'ang', 'mga', 'ito', 'iyan', 'iyon', 'dito', 'diyan', 'doon', 'may', 'wala', 'mayroon'];
-                const msgWords = m.split(/\s+/);
-                const hasRealWord = msgWords.some(w => realWords.includes(w) || w.length <= 2);
-                // Also check if any word appears in our KB keys
-                const inKB = KB.some(e => e.keys.some(k => k.split(/\s+/).some(kw => msgWords.some(w => w === kw))));
-                if (!hasRealWord && !inKB && m.length < 20) {
-                    return '🤖 That doesn\'t look like a question I can understand. Please type a clear question in English or Filipino about barangay services.<br><br>Example: <em>"How do I get a barangay clearance?"</em>';
-                }
-
-                // ── 2. Inappropriate / rude language ─────────────────────────
-                const rude = ['putang', 'gago', 'bobo', 'tanga', 'ulol', 'puta', 'fuck', 'shit', 'damn', 'idiot', 'stupid', 'dumb', 'ass', 'bitch', 'hate', 'kill', 'die'];
-                if (rude.some(w => m.includes(w))) {
-                    return '🙏 I understand you may be frustrated, but I\'m here to help with barangay services. Please keep our conversation respectful so I can assist you better.<br><br>If you have an urgent concern, please visit the <strong>Barangay Hall</strong> (Mon–Fri, 8AM–5PM) or call <strong>+63 (054) 000-0000</strong>.';
-                }
-
-                // ── 3. Spam / test messages ───────────────────────────────────
-                const spam = ['test', 'testing', 'asdf', 'qwerty', 'lorem', '1234', 'abcd', 'xyz', 'aaa', 'bbb'];
-                if (spam.some(w => m === w || m.startsWith(w + ' '))) {
-                    return '👋 It looks like you\'re testing the chat! I\'m ready to answer real questions about Barangay Bacolod\'s services.<br><br>Try asking: <em>"How do I request a barangay clearance?"</em> or <em>"How do I create an account?"</em>';
-                }
-
-                // ── 4. Out-of-scope topics ────────────────────────────────────
-                const outOfScope = [{
-                        keys: ['weather', 'forecast', 'temperature', 'rain', 'typhoon'],
-                        reply: '🌤️ I can only answer questions about barangay services. For weather updates, please check <strong>PAGASA</strong> or your local news.'
-                    },
-                    {
-                        keys: ['news', 'politics', 'election', 'president', 'mayor', 'governor'],
-                        reply: '📰 I\'m focused on Barangay Bacolod services and can\'t discuss political topics. For local government news, visit the official municipal website.'
-                    },
-                    {
-                        keys: ['recipe', 'food', 'cook', 'restaurant', 'eat'],
-                        reply: '🍽️ I\'m a barangay services assistant and can\'t help with food-related questions. Is there anything about barangay documents or services I can help you with?'
-                    },
-                    {
-                        keys: ['game', 'play', 'movie', 'music', 'song', 'netflix', 'youtube', 'tiktok', 'facebook'],
-                        reply: '🎮 I\'m here specifically to help with barangay services. I can\'t assist with entertainment topics. Try asking about clearances, blotter reports, or account registration!'
-                    },
-                    {
-                        keys: ['joke', 'funny', 'laugh', 'meme'],
-                        reply: '😄 I appreciate the fun spirit, but I\'m a barangay services assistant! I\'m best at answering questions about documents, accounts, and barangay processes. How can I help you today?'
-                    },
-                    {
-                        keys: ['love', 'relationship', 'boyfriend', 'girlfriend', 'crush', 'marry'],
-                        reply: '💙 That\'s sweet, but I\'m a barangay services assistant! I can help you with clearances, blotter reports, account registration, and more. What barangay service do you need?'
-                    },
-                    {
-                        keys: ['money', 'loan', 'borrow', 'invest', 'stock', 'crypto', 'bitcoin'],
-                        reply: '💰 I can only assist with barangay services. For financial concerns, please contact the appropriate government agencies (SSS, Pag-IBIG, BIR) or your local bank.'
-                    },
-                    {
-                        keys: ['medical', 'doctor', 'hospital', 'medicine', 'sick', 'health', 'covid'],
-                        reply: '🏥 For medical concerns, please contact your nearest health center or hospital. The Barangay Health Center of Bacolod can also assist with basic health services. I can only answer questions about barangay documents and services.'
-                    },
-                    {
-                        keys: ['school', 'college', 'university', 'enroll', 'tuition', 'scholarship'],
-                        reply: '🎓 For educational concerns, please contact your school or DepEd. I can only assist with barangay services like clearances, blotter reports, and account registration.'
-                    },
-                    {
-                        keys: ['police', 'crime', 'arrest', 'nbi', 'pnp', 'court', 'lawyer', 'legal advice'],
-                        reply: '⚖️ For serious legal or criminal matters, please contact the <strong>Philippine National Police (PNP)</strong> or consult a lawyer. The barangay can assist with community disputes through the blotter system.'
-                    },
-                    {
-                        keys: ['who are you', 'what are you', 'are you human', 'are you ai', 'are you a robot', 'are you real'],
-                        reply: '🤖 I\'m the <strong>BIS Assistant</strong> — an automated chatbot for Barangay Bacolod, Bato, Camarines Sur. I\'m not a human, but I\'m here to help you with barangay services 24/7!<br><br>For complex concerns, visit the barangay hall (Mon–Fri, 8AM–5PM).'
-                    },
-                    {
-                        keys: ['what can you do', 'what do you know', 'help me', 'i need help'],
-                        reply: '🙋 I can help you with:<br><br>• 📄 <strong>Documents</strong> — clearance, residency, indigency, good moral<br>• 👤 <strong>Account</strong> — registration, login, password reset<br>• 📋 <strong>Blotter</strong> — filing a report, hearing schedule<br>• 🏘️ <strong>Census</strong> — household number, updating records<br>• 🕐 <strong>Office hours</strong> and contact information<br><br>Just type your question!'
-                    },
-                ];
-                for (const entry of outOfScope) {
-                    if (entry.keys.some(k => m.includes(k))) return entry.reply;
-                }
-
-                // ── 5. Knowledge base matching ────────────────────────────────
-                for (const e of KB) {
-                    for (const k of e.keys) {
-                        if (m.includes(k)) return e.answer;
-                    }
-                }
-                // Partial word fallback
-                const words = m.split(/\s+/);
-                for (const e of KB) {
-                    for (const k of e.keys) {
-                        if (k.split(/\s+/).some(kw => kw.length > 3 && words.some(w => w.includes(kw) || kw.includes(w)))) return e.answer;
-                    }
-                }
-
-                // ── 6. Final fallback ─────────────────────────────────────────
-                return '🤔 I\'m not sure how to answer that. I\'m specialized in <strong>Barangay Bacolod services</strong>.<br><br>Here\'s what I can help with:<br>• 📄 Document requests (clearance, residency, indigency)<br>• 👤 Account registration and login<br>• 📋 Filing blotter reports<br>• 🕐 Office hours and contact info<br><br>Try rephrasing your question, or visit the <strong>Barangay Hall</strong> (Mon–Fri, 8AM–5PM) for direct assistance.';
-            }
+            // Knowledge base replaced with Gemini API - using real AI responses
+            // All hardcoded KB logic removed - now using dynamic AI responses via API
 
             function now() {
                 const d = new Date();
@@ -2418,7 +2236,7 @@
                 wrap.scrollTop = wrap.scrollHeight;
             }
 
-            window.cwSend = function() {
+            window.cwSend = async function() {
                 const inp = document.getElementById('cwInput');
                 const msg = inp.value.trim();
                 if (!msg) return;
@@ -2426,24 +2244,62 @@
                 inp.value = '';
                 document.getElementById('cwUnread').style.display = 'none';
                 typing();
-                setTimeout(() => {
+                
+                try {
+                    const response = await fetch('/api/chatbot/chat', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: `message=${encodeURIComponent(msg)}`
+                    });
+
+                    const data = await response.json();
                     const t = document.getElementById('cwTyping');
                     if (t) t.remove();
-                    addMsg(getR(msg), false);
-                }, 800);
+                    
+                    if (data.success) {
+                        addMsg(data.response, false);
+                    } else {
+                        addMsg('Sorry, I encountered an error. Please try again.', false);
+                    }
+                } catch (error) {
+                    const t = document.getElementById('cwTyping');
+                    if (t) t.remove();
+                    addMsg('Sorry, I encountered an error. Please try again.', false);
+                }
             };
 
-            window.cwQuick = function(msg) {
+            window.cwQuick = async function(msg) {
                 const chips = document.getElementById('cwChips');
                 if (chips) chips.remove();
                 addMsg(msg, true);
                 document.getElementById('cwUnread').style.display = 'none';
                 typing();
-                setTimeout(() => {
+                
+                try {
+                    const response = await fetch('/api/chatbot/chat', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: `message=${encodeURIComponent(msg)}`
+                    });
+
+                    const data = await response.json();
                     const t = document.getElementById('cwTyping');
                     if (t) t.remove();
-                    addMsg(getR(msg), false);
-                }, 800);
+                    
+                    if (data.success) {
+                        addMsg(data.response, false);
+                    } else {
+                        addMsg('Sorry, I encountered an error. Please try again.', false);
+                    }
+                } catch (error) {
+                    const t = document.getElementById('cwTyping');
+                    if (t) t.remove();
+                    addMsg('Sorry, I encountered an error. Please try again.', false);
+                }
             };
 
             window.cwTogglePanel = function() {
@@ -2467,4 +2323,4 @@
     </script>
 </body>
 
-</html>
+</html>`

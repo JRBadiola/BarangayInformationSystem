@@ -957,6 +957,10 @@ class UIController extends BaseController
         // Delegate to SkController
         return (new \App\Controllers\SkController())->programs();
     }
+    public function sk_chatbot()
+    {
+        return view('dashboard/sk/chatbot');
+    }
     public function sk_reports()
     {
         $db = \Config\Database::connect();
