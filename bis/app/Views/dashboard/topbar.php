@@ -458,7 +458,7 @@
         })();
     </script>
 
-<?php elseif (in_array(session()->get('role'), ['secretary', 'captain'])): ?>
+<?php elseif (in_array(session()->get('role'), ['secretary', 'captain', 'sk'])): ?>
     <style>
         .db-notif-count {
             position: absolute;

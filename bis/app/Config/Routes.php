@@ -220,6 +220,11 @@ $routes->group('/resident', ['filter' => ['auth', 'role:resident']], function ($
     $routes->post('notifications/read-all',    'NotificationController::markAllRead');
     $routes->post('blotter/store', 'BlotterController::store');
 
+    // SK Activities — residents can view and join
+    $routes->get('sk-activities',                     'SkController::residentActivities');
+    $routes->post('sk-activities/join/(:num)',         'SkController::joinProgram/$1');
+    $routes->post('sk-activities/unjoin/(:num)',       'SkController::unjoinProgram/$1');
+
     // Password change via OTP
     $routes->post('settings/request-otp',     'SettingsController::requestPasswordOtp');
     $routes->post('settings/verify-otp',      'SettingsController::verifyPasswordOtp');
@@ -247,6 +252,8 @@ $routes->group('/sk', ['filter' => ['auth', 'role:sk']], function ($routes) {
     $routes->post('programs/store',       'SkController::storeProgram');
     $routes->post('programs/update/(:num)', 'SkController::updateProgram/$1');
     $routes->post('programs/delete/(:num)', 'SkController::deleteProgram/$1');
+    $routes->get('programs/registrations/(:num)', 'SkController::viewRegistrations/$1');
+    $routes->post('programs/registrations/update/(:num)', 'SkController::updateRegistration/$1');
     $routes->get('chatbot',               'UIController::sk_chatbot');
     $routes->post('chatbot/api/chat',           'ChatbotController::chat');
     $routes->post('chatbot/api/save-log',       'ChatbotController::saveLog');
@@ -269,4 +276,8 @@ $routes->group('/sk', ['filter' => ['auth', 'role:sk']], function ($routes) {
     $routes->post('settings/change-password', 'SettingsController::changePassword');
     $routes->post('settings/profile',         'SettingsController::updateProfile');
     $routes->post('settings/avatar',          'SettingsController::uploadAvatar');
+
+    // Notifications
+    $routes->get('notifications',      'AdminNotificationController::index/sk');
+    $routes->get('notifications/poll', 'AdminNotificationController::poll');
 });

@@ -833,7 +833,7 @@
                                 <div class="clr-doc-check"><i class="fas fa-check"></i></div>
                                 <div class="clr-doc-icon"><i class="fas fa-certificate"></i></div>
                                 <div class="clr-doc-name">Barangay Clearance</div>
-                                <div class="clr-doc-fee">Free</div>
+                                <div class="clr-doc-fee">₱100.00</div>
                             </label>
                             <label class="clr-doc-card" onclick="selectDoc(this)">
                                 <input type="radio" name="document_type" value="Certificate of Residency">
@@ -867,6 +867,28 @@
                                 <div class="clr-doc-icon"><i class="fas fa-home"></i></div>
                                 <div class="clr-doc-name">First Time Job Seekers</div>
                                 <div class="clr-doc-fee">Free</div>
+                                <?php if (strcasecmp(trim($occupation ?? ''), 'Employed') === 0): ?>
+                                    <div class="clr-indig-warn"><i class="fas fa-ban"></i> Currently employed, not eligible for First Time Job Seekers</div>
+                                <?php endif; ?>
+                            </label>
+
+                            <label class="clr-doc-card <?= (strcasecmp(trim($occupation ?? ''), 'Employed') === 0 ? 'clr-doc-card--ineligible' : '') ?>" onclick="selectDoc(this)" id="firstTimeJobSeekersCard">
+                                <input type="radio" name="document_type" value="First Time Job Seekers" <?= (strcasecmp(trim($occupation ?? ''), 'Employed') === 0 ? 'disabled' : '') ?>>
+                                <div class="clr-doc-check"><i class="fas fa-check"></i></div>
+                                <div class="clr-doc-icon"><i class="fas fa-home"></i></div>
+                                <div class="clr-doc-name">Solo Parent Certificate</div>
+                                <div class="clr-doc-fee">Free</div>
+                                <?php if (strcasecmp(trim($occupation ?? ''), 'Employed') === 0): ?>
+                                    <div class="clr-indig-warn"><i class="fas fa-ban"></i> Currently employed, not eligible for First Time Job Seekers</div>
+                                <?php endif; ?>
+                            </label>
+
+                            <label class="clr-doc-card <?= (strcasecmp(trim($occupation ?? ''), 'Employed') === 0 ? 'clr-doc-card--ineligible' : '') ?>" onclick="selectDoc(this)" id="firstTimeJobSeekersCard">
+                                <input type="radio" name="document_type" value="First Time Job Seekers" <?= (strcasecmp(trim($occupation ?? ''), 'Employed') === 0 ? 'disabled' : '') ?>>
+                                <div class="clr-doc-check"><i class="fas fa-check"></i></div>
+                                <div class="clr-doc-icon"><i class="fas fa-home"></i></div>
+                                <div class="clr-doc-name">Business Permit Clerance </div>
+                                <div class="clr-doc-fee">₱75.00</div>
                                 <?php if (strcasecmp(trim($occupation ?? ''), 'Employed') === 0): ?>
                                     <div class="clr-indig-warn"><i class="fas fa-ban"></i> Currently employed, not eligible for First Time Job Seekers</div>
                                 <?php endif; ?>

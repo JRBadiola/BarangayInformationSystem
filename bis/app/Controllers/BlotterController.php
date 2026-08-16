@@ -567,12 +567,39 @@ class BlotterController extends BaseController
             return redirect()->to('/' . $role . '/blotter')->with('error', 'Report not found.');
         }
 
+        // Fetch live captain and secretary names from users table
+        $userModel = new \App\Models\UserModel();
+
+        $captainRow   = $userModel->getActiveByRole('captain');
+        $captainName  = $captainRow
+            ? strtoupper(trim(
+                ($captainRow['first_name']  ?? '') . ' ' .
+                    ($captainRow['middle_name'] ?? '') . ' ' .
+                    ($captainRow['last_name']   ?? '')
+            ))
+            : 'PUNONG BARANGAY';
+
+        $secretaryRow  = $userModel->getActiveByRole('secretary');
+        $secretaryName = $secretaryRow
+            ? strtoupper(trim(
+                ($secretaryRow['first_name']  ?? '') . ' ' .
+                    ($secretaryRow['middle_name'] ?? '') . ' ' .
+                    ($secretaryRow['last_name']   ?? '')
+            ))
+            : 'BARANGAY SECRETARY';
+
+        // Collapse multiple spaces from empty middle names
+        $captainName   = preg_replace('/\s+/', ' ', $captainName);
+        $secretaryName = preg_replace('/\s+/', ' ', $secretaryName);
+
         // Mark letter as issued
         $this->model->update($id, ['letter_issued_at' => date('Y-m-d H:i:s')]);
 
         return view('blotter_letter', [
-            'report' => $report,
-            'role'   => $role,
+            'report'        => $report,
+            'role'          => $role,
+            'captainName'   => $captainName,
+            'secretaryName' => $secretaryName,
         ]);
     }
 }

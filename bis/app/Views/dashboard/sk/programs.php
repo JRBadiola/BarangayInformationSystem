@@ -270,6 +270,11 @@
                                     <td><span class="db-badge <?= $badge ?>"><?= esc($p['status']) ?></span></td>
                                     <td>
                                         <div class="db-action-group">
+                                            <a href="/sk/programs/registrations/<?= $p['id'] ?>"
+                                                class="db-icon-btn" title="View Registrations"
+                                                style="color:#5b6fd6;">
+                                                <i class="fas fa-users"></i>
+                                            </a>
                                             <button class="db-icon-btn" title="Edit"
                                                 onclick="openEditModal(<?= htmlspecialchars(json_encode($p), ENT_QUOTES) ?>)">
                                                 <i class="fas fa-edit"></i>
@@ -333,6 +338,17 @@
                         <div>
                             <label class="sk-form-label">Description</label>
                             <textarea name="description" class="sk-form-input" rows="2" placeholder="Brief description..." style="resize:vertical;"></textarea>
+                        </div>
+                    </div>
+                    <div class="sk-form-row sk-form-row--full" style="margin-bottom:14px;">
+                        <div>
+                            <label class="sk-form-label">
+                                Requirements
+                                <span style="font-size:11px;font-weight:400;color:#b0b6cc;">(one per line — residents must confirm these to join)</span>
+                            </label>
+                            <textarea name="requirements" class="sk-form-input" rows="3"
+                                placeholder="e.g.&#10;Barangay ID&#10;Medical Certificate&#10;Waiver Form"
+                                style="resize:vertical;"></textarea>
                         </div>
                     </div>
                     <div class="sk-form-row" style="margin-bottom:14px;">
@@ -413,6 +429,15 @@
                             <textarea name="description" id="edit_description" class="sk-form-input" rows="2" style="resize:vertical;"></textarea>
                         </div>
                     </div>
+                    <div class="sk-form-row sk-form-row--full" style="margin-bottom:14px;">
+                        <div>
+                            <label class="sk-form-label">
+                                Requirements
+                                <span style="font-size:11px;font-weight:400;color:#b0b6cc;">(one per line)</span>
+                            </label>
+                            <textarea name="requirements" id="edit_requirements" class="sk-form-input" rows="3" style="resize:vertical;"></textarea>
+                        </div>
+                    </div>
                     <div class="sk-form-row" style="margin-bottom:14px;">
                         <div>
                             <label class="sk-form-label">Start Date</label>
@@ -465,6 +490,9 @@
 
             document.getElementById('edit_name').value = prog.name || '';
             document.getElementById('edit_description').value = prog.description || '';
+            // Convert comma-separated requirements to one-per-line
+            const reqs = prog.requirements ? prog.requirements.split(',').map(r => r.trim()).join('\n') : '';
+            document.getElementById('edit_requirements').value = reqs;
             document.getElementById('edit_start_date').value = prog.start_date || '';
             document.getElementById('edit_end_date').value = prog.end_date || '';
             document.getElementById('edit_venue').value = prog.venue || '';

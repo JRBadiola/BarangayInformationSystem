@@ -389,16 +389,22 @@ class SkController extends BaseController
         $endDate   = $post['end_date']   ?? null;
         $status    = $post['status']     ?? '';
         if (empty($status)) {
-            if ($startDate && $startDate > $today)                         $status = 'Upcoming';
-            elseif ($endDate && $endDate < $today)                         $status = 'Completed';
-            elseif ($startDate && $startDate <= $today)                    $status = 'Active';
-            else                                                            $status = 'Upcoming';
+            if ($startDate && $startDate > $today)      $status = 'Upcoming';
+            elseif ($endDate && $endDate < $today)      $status = 'Completed';
+            elseif ($startDate && $startDate <= $today) $status = 'Active';
+            else                                         $status = 'Upcoming';
         }
 
-        $progModel->insert([
+        // Parse requirements (one per line from textarea → store as comma-separated)
+        $reqRaw  = trim($post['requirements'] ?? '');
+        $reqList = array_filter(array_map('trim', preg_split('/[\n,]+/', $reqRaw)));
+        $reqStr  = implode(', ', $reqList) ?: null;
+
+        $programId = $progModel->insert([
             'name'                => trim($post['name']),
             'category'            => $post['category'],
             'description'         => trim($post['description'] ?? '') ?: null,
+            'requirements'        => $reqStr,
             'start_date'          => $startDate ?: null,
             'end_date'            => $endDate   ?: null,
             'venue'               => trim($post['venue'] ?? '') ?: null,
@@ -407,9 +413,44 @@ class SkController extends BaseController
             'budget'              => (float)($post['budget'] ?? 0),
             'status'              => $status,
             'created_by'          => (int)session()->get('user_id'),
-        ]);
+            'notify_residents'    => 0,
+        ], true);
 
-        return redirect()->to('/sk/programs')->with('success', 'Program "' . esc(trim($post['name'])) . '" added successfully.');
+        // Notify all active residents about the new program
+        $this->_notifyResidentsOfProgram((int)$programId, trim($post['name']), $status, $startDate);
+
+        return redirect()->to('/sk/programs')->with('success', 'Program "' . esc(trim($post['name'])) . '" added and residents notified.');
+    }
+
+    /**
+     * Push a notification to every active resident about a new SK program.
+     */
+    private function _notifyResidentsOfProgram(int $programId, string $name, string $status, ?string $startDate): void
+    {
+        $db = \Config\Database::connect();
+
+        $residents = $db->table('users')
+            ->select('id')
+            ->where('role', 'resident')
+            ->where('status', 'active')
+            ->get()->getResultArray();
+
+        $dateLabel = $startDate ? ' on ' . date('M d, Y', strtotime($startDate)) : '';
+        $body      = "A new SK activity has been added: \"{$name}\" ({$status}){$dateLabel}. Open the SK Activities page to learn more and join!";
+        $link      = '/resident/sk-activities';
+
+        foreach ($residents as $res) {
+            \App\Models\NotificationModel::push(
+                (int) $res['id'],
+                'sk_program',
+                'New SK Activity: ' . $name,
+                $body,
+                $link
+            );
+        }
+
+        // Mark program as notified
+        $db->table('sk_programs')->where('id', $programId)->update(['notify_residents' => 1]);
     }
 
     public function updateProgram(int $id)
@@ -426,10 +467,16 @@ class SkController extends BaseController
         $endDate   = $post['end_date']   ?? null;
         $status    = $post['status'] ?? $prog['status'];
 
+        // Parse requirements
+        $reqRaw  = trim($post['requirements'] ?? '');
+        $reqList = array_filter(array_map('trim', preg_split('/[\n,]+/', $reqRaw)));
+        $reqStr  = implode(', ', $reqList) ?: null;
+
         $progModel->update($id, [
             'name'                => trim($post['name']),
             'category'            => $post['category'] ?? $prog['category'],
             'description'         => trim($post['description'] ?? '') ?: null,
+            'requirements'        => $reqStr,
             'start_date'          => $startDate ?: null,
             'end_date'            => $endDate   ?: null,
             'venue'               => trim($post['venue'] ?? '') ?: null,
@@ -447,5 +494,152 @@ class SkController extends BaseController
         $progModel = new \App\Models\SkProgramModel();
         $progModel->delete($id);
         return redirect()->to('/sk/programs')->with('success', 'Program deleted.');
+    }
+
+    // ── Resident: view SK activities ──────────────────────────────────────────
+
+    public function residentActivities()
+    {
+        $userId    = (int) session()->get('user_id');
+        $progModel = new \App\Models\SkProgramModel();
+        $programs  = $progModel->getVisibleToResidents();
+
+        // Attach registration status and count for each program
+        foreach ($programs as &$p) {
+            $p['registration']       = $progModel->isRegistered((int)$p['id'], $userId);
+            $p['registration_count'] = $progModel->getRegistrationCount((int)$p['id']);
+            $p['requirements_list']  = \App\Models\SkProgramModel::parseRequirements($p['requirements']);
+        }
+        unset($p);
+
+        return view('dashboard/resident/sk_activities', [
+            'programs' => $programs,
+        ]);
+    }
+
+    // ── Resident: join an SK program ──────────────────────────────────────────
+
+    public function joinProgram(int $programId)
+    {
+        $userId    = (int) session()->get('user_id');
+        $progModel = new \App\Models\SkProgramModel();
+        $program   = $progModel->find($programId);
+
+        if (! $program || ! in_array($program['status'], ['Active', 'Upcoming'])) {
+            return redirect()->to('/resident/sk-activities')->with('error', 'This program is not available for registration.');
+        }
+
+        // Check already registered
+        if ($progModel->isRegistered($programId, $userId)) {
+            return redirect()->to('/resident/sk-activities')->with('error', 'You are already registered for this program.');
+        }
+
+        // Collect submitted requirements (checkboxes)
+        $submitted = $this->request->getPost('requirements') ?? [];
+        if (is_array($submitted)) {
+            $submitted = array_filter(array_map('trim', $submitted));
+        }
+
+        $db = \Config\Database::connect();
+        $db->table('sk_program_registrations')->insert([
+            'program_id'             => $programId,
+            'user_id'                => $userId,
+            'status'                 => 'pending',
+            'requirements_submitted' => !empty($submitted) ? implode(', ', $submitted) : null,
+            'notes'                  => trim($this->request->getPost('notes') ?? '') ?: null,
+            'created_at'             => date('Y-m-d H:i:s'),
+            'updated_at'             => date('Y-m-d H:i:s'),
+        ]);
+
+        // Notify SK officer
+        $skUser = $db->table('users')->where('role', 'sk')->where('status', 'active')->get()->getRowArray();
+        if ($skUser) {
+            $resName = trim(session()->get('first_name') . ' ' . session()->get('last_name'));
+            \App\Models\NotificationModel::push(
+                (int) $skUser['id'],
+                'sk_join',
+                'New Registration — ' . $program['name'],
+                $resName . ' has registered for "' . $program['name'] . '" and is awaiting approval.',
+                '/sk/programs/registrations/' . $programId
+            );
+        }
+
+        return redirect()->to('/resident/sk-activities')->with('success', 'Successfully registered for "' . esc($program['name']) . '"! The SK will review your registration.');
+    }
+
+    // ── Resident: unjoin an SK program ────────────────────────────────────────
+
+    public function unjoinProgram(int $programId)
+    {
+        $userId = (int) session()->get('user_id');
+        $db     = \Config\Database::connect();
+        $db->table('sk_program_registrations')
+            ->where('program_id', $programId)
+            ->where('user_id', $userId)
+            ->delete();
+
+        return redirect()->to('/resident/sk-activities')->with('success', 'Registration cancelled.');
+    }
+
+    // ── SK: view registrations for a program ──────────────────────────────────
+
+    public function viewRegistrations(int $programId)
+    {
+        $progModel = new \App\Models\SkProgramModel();
+        $program   = $progModel->find($programId);
+        if (! $program) {
+            return redirect()->to('/sk/programs')->with('error', 'Program not found.');
+        }
+
+        $db = \Config\Database::connect();
+        $registrations = $db->table('sk_program_registrations r')
+            ->select('r.*, CONCAT(u.first_name," ",u.last_name) AS resident_name, u.email, u.username')
+            ->join('users u', 'u.id = r.user_id', 'left')
+            ->where('r.program_id', $programId)
+            ->orderBy('r.created_at', 'ASC')
+            ->get()->getResultArray();
+
+        return view('dashboard/sk/registrations', [
+            'program'       => $program,
+            'registrations' => $registrations,
+            'reqList'       => \App\Models\SkProgramModel::parseRequirements($program['requirements']),
+        ]);
+    }
+
+    // ── SK: approve/reject a registration ────────────────────────────────────
+
+    public function updateRegistration(int $regId)
+    {
+        $newStatus = $this->request->getPost('status');
+        if (! in_array($newStatus, ['approved', 'rejected'])) {
+            return redirect()->back()->with('error', 'Invalid status.');
+        }
+
+        $db  = \Config\Database::connect();
+        $reg = $db->table('sk_program_registrations')->where('id', $regId)->get()->getRowArray();
+        if (! $reg) return redirect()->back()->with('error', 'Registration not found.');
+
+        $db->table('sk_program_registrations')->where('id', $regId)->update([
+            'status'     => $newStatus,
+            'updated_at' => date('Y-m-d H:i:s'),
+        ]);
+
+        // Notify resident
+        $progModel = new \App\Models\SkProgramModel();
+        $program   = $progModel->find($reg['program_id']);
+        if ($program) {
+            $msg = $newStatus === 'approved'
+                ? 'Your registration for "' . $program['name'] . '" has been approved! See you there.'
+                : 'Your registration for "' . $program['name'] . '" was not approved. Contact the SK for more info.';
+            \App\Models\NotificationModel::push(
+                (int) $reg['user_id'],
+                'sk_registration_' . $newStatus,
+                'Registration ' . ucfirst($newStatus) . ' — ' . $program['name'],
+                $msg,
+                '/resident/sk-activities'
+            );
+        }
+
+        return redirect()->back()->with('success', 'Registration ' . $newStatus . '.');
     }
 }

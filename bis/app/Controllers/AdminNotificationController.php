@@ -16,6 +16,11 @@ class AdminNotificationController extends BaseController
     // ── GET /secretary/notifications  ─────────────────────────────────────────
     public function index(string $role = 'secretary')
     {
+        // SK gets a completely different notifications page — activity-focused
+        if ($role === 'sk') {
+            return view('dashboard/sk/notifications');
+        }
+
         $data = $this->_buildNotificationData();
         $data['role'] = $role;
 
@@ -29,6 +34,21 @@ class AdminNotificationController extends BaseController
     // ── GET /secretary/notifications/poll  (JSON for topbar bell) ─────────────
     public function poll(): \CodeIgniter\HTTP\ResponseInterface
     {
+        $role = session()->get('role');
+
+        // SK gets their own count: pending registrations for their programs
+        if ($role === 'sk') {
+            $userId = (int) session()->get('user_id');
+            $db     = \Config\Database::connect();
+            $count  = (int) $db->table('sk_program_registrations r')
+                ->join('sk_programs p', 'p.id = r.program_id')
+                ->where('p.created_by', $userId)
+                ->where('r.status', 'pending')
+                ->countAllResults();
+            return $this->response->setJSON(['unread' => $count]);
+        }
+
+        // Secretary / Captain: use the shared builder
         $data  = $this->_buildNotificationData();
         $total = array_sum(array_column($data['groups'], 'count'));
 

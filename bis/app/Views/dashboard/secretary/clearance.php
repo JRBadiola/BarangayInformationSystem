@@ -177,7 +177,7 @@
             <!-- Document Templates Section -->
             <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-top:28px;margin-bottom:12px;">
                 <h3 class="db-section-title" style="margin:0;"><i class="fas fa-file-alt" style="color:#5b6fd6;margin-right:8px;"></i>Document Templates</h3>
-                <a href="/secretary/barangay-settings"
+                <a href="/secretary/templates"
                     class="db-btn db-btn--outline db-btn--sm"
                     style="display:inline-flex;align-items:center;gap:7px;font-size:12.5px;">
                     <i class="fas fa-landmark"></i> Edit Barangay Info
@@ -198,7 +198,7 @@
                 <div class="doc-tpl-card" onclick="openDocModal('residency')">
                     <div class="doc-tpl-icon" style="background:rgba(22,199,154,0.12);color:#16c79a;"><i class="fas fa-home"></i></div>
                     <div class="doc-tpl-info">
-                        <h4>Barangay Certification</h4>
+                        <h4>Barangay Residency</h4>
                         <p>Certifies that the resident lives within the barangay jurisdiction.</p>
                     </div>
                     <div class="doc-tpl-actions">
@@ -243,6 +243,17 @@
                     <div class="doc-tpl-icon" style="background:rgba(22,199,154,0.12);color:#16c79a;"><i class="fas fa-user-friends"></i></div>
                     <div class="doc-tpl-info">
                         <h4>Solo Parent Certificate</h4>
+                        <p>Certifies the resident's status as a solo parent for government benefits.</p>
+                    </div>
+                    <div class="doc-tpl-actions">
+                        <button class="db-btn db-btn--sm db-btn--outline" onclick="event.stopPropagation();openDocModal('solo_parent')"><i class="fas fa-eye"></i> Preview</button>
+                        <button class="db-btn db-btn--sm db-btn--primary" onclick="event.stopPropagation();printDoc('solo_parent')"><i class="fas fa-print"></i> Print</button>
+                    </div>
+                </div>
+                <div class="doc-tpl-card" onclick="openDocModal('solo_parent')">
+                    <div class="doc-tpl-icon" style="background:rgba(22,199,154,0.12);color:#16c79a;"><i class="fas fa-user-friends"></i></div>
+                    <div class="doc-tpl-info">
+                        <h4>First Time Job Seekers</h4>
                         <p>Certifies the resident's status as a solo parent for government benefits.</p>
                     </div>
                     <div class="doc-tpl-actions">

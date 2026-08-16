@@ -306,6 +306,8 @@
     $incidentType     = esc($r['incident_type']);
     $location         = esc($r['location'] ?? 'Barangay Bacolod');
     $hearingNotes     = esc($r['hearing_notes'] ?? '');
+    $captainName      = esc($captainName   ?? 'PUNONG BARANGAY');
+    $secretaryName    = esc($secretaryName ?? 'BARANGAY SECRETARY');
     ?>
 
     <!-- ── COMPLAINANT COPY ── -->
