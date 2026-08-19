@@ -81,12 +81,8 @@ class AuthController extends BaseController
 
     public function register()
     {
-        $role = strtolower($this->request->getPost('role'));
-
-        $allowedRoles = ['resident', 'sk'];
-        if (! in_array($role, $allowedRoles, true)) {
-            return redirect()->to('/signup')->with('error', 'That role cannot be self-registered. Please contact the barangay office.');
-        }
+        // Public signup is always 'resident' — SK/officials are created by admin
+        $role = 'resident';
 
         $lastName        = trim($this->request->getPost('last_name') ?? '');
         $firstName       = trim($this->request->getPost('first_name') ?? '');

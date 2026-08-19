@@ -219,9 +219,9 @@ class UIController extends BaseController
     {
         return view('select_role');
     }
-    public function create_acc($role = 'resident')
+    public function create_acc()
     {
-        return view('create_acc', ['role' => ucfirst($role)]);
+        return view('create_acc');
     }
     public function logout()
     {

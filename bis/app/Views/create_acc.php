@@ -125,7 +125,7 @@
             box-shadow: 0 0 0 3px rgba(29, 36, 72, 0.08);
         }
 
-        /* Custom select arrow */
+        /* Custom select arrow — kept for any remaining selects */
         .select-wrap {
             position: relative;
         }
@@ -141,26 +141,6 @@
             color: #b0b6cc;
             pointer-events: none;
             font-size: 13px;
-        }
-
-        /* Role hint badge */
-        .role-hint {
-            font-size: 11.5px;
-            color: #9aa0b4;
-            margin-top: 5px;
-            display: none;
-        }
-
-        .role-hint.visible {
-            display: block;
-        }
-
-        .role-hint.pending {
-            color: #e67e22;
-        }
-
-        .role-hint.active {
-            color: #16a085;
         }
 
         .password-wrap {
@@ -278,23 +258,13 @@
 
             <form action="/signup/store" method="post">
                 <?= csrf_field() ?>
+                <!-- Role is always resident for public signup -->
+                <input type="hidden" name="role" value="resident">
 
-                <!-- Role Dropdown -->
-                <div class="form-group">
-                    <label for="role">I am a <span style="color:#c0392b;">*</span></label>
-                    <div class="select-wrap">
-                        <select id="role" name="role" required onchange="onRoleChange(this.value)">
-                            <option value="" disabled selected>-- Select your role --</option>
-                            <option value="resident">Resident</option>
-                            <option value="sk">SK (Sangguniang Kabataan)</option>
-                        </select>
-                    </div>
-                    <p class="role-hint pending" id="hint-resident">
-                        <i class="fas fa-clock"></i> You will receive a verification email first. After verifying, the barangay captain or secretary will check if you are recorded in the census before activating your account.
-                    </p>
-                    <p class="role-hint pending" id="hint-sk">
-                        <i class="fas fa-clock"></i> You will receive a verification email first. After verifying, your account requires approval from the barangay captain or secretary before you can log in.
-                    </p>
+                <!-- Info notice -->
+                <div style="background:#f0f2ff;border:1.5px solid #c9d0f5;border-radius:10px;padding:12px 15px;margin-bottom:18px;display:flex;gap:10px;align-items:flex-start;font-size:12.5px;color:#4a5068;">
+                    <i class="fas fa-info-circle" style="color:#5b6fd6;margin-top:2px;flex-shrink:0;"></i>
+                    <span>After verifying your email, the barangay captain or secretary will review and activate your account. You will be notified once approved.</span>
                 </div>
 
                 <div class="form-row-2">
@@ -319,19 +289,16 @@
                         placeholder="Middle name">
                 </div>
 
-                <!-- Household Number — shown only for Resident -->
-                <div class="form-group" id="household-group" style="display:none;">
-                    <label for="household_no">
-                        Household Number <span style="color:#c0392b;">*</span>
-                    </label>
+                <!-- Household Number — required for all residents -->
+                <div class="form-group">
+                    <label for="household_no">Household Number <span style="color:#c0392b;">*</span></label>
                     <input type="text" id="household_no" name="household_no"
                         value="<?= old('household_no') ?>"
                         placeholder="Enter your 5-digit household number"
-                        maxlength="5" inputmode="numeric"
-                        pattern="[0-9]{5}">
+                        required maxlength="5" inputmode="numeric" pattern="[0-9]{5}">
                     <p style="font-size:11.5px;color:#9aa0b4;margin-top:5px;">
                         <i class="fas fa-info-circle"></i>
-                        Your household number is assigned by the barangay. Ask your household head or the barangay office.
+                        Your household number is assigned by the barangay. Ask your household head or visit the barangay office.
                     </p>
                 </div>
 
@@ -339,7 +306,12 @@
                     <label for="email">Email</label>
                     <input type="email" id="email" name="email"
                         value="<?= old('email') ?>"
-                        placeholder="Enter your email" required>
+                        placeholder="Enter your email" required
+                        oninput="checkEmailTypo(this)">
+                    <div id="emailTypoWarn" style="display:none;margin-top:6px;padding:7px 11px;background:#fff8ee;border:1px solid #f5d88a;border-radius:7px;font-size:12.5px;color:#b7600a;">
+                        <i class="fas fa-exclamation-triangle" style="margin-right:5px;"></i>
+                        <span id="emailTypoMsg"></span>
+                    </div>
                 </div>
 
                 <div class="form-group">
@@ -386,23 +358,6 @@
     </div>
 
     <script>
-        function onRoleChange(val) {
-            document.getElementById('hint-resident').classList.toggle('visible', val === 'resident');
-            document.getElementById('hint-sk').classList.toggle('visible', val === 'sk');
-
-            // Show household number only for residents
-            const hhGroup = document.getElementById('household-group');
-            const hhInput = document.getElementById('household_no');
-            if (val === 'resident') {
-                hhGroup.style.display = 'block';
-                hhInput.required = true;
-            } else {
-                hhGroup.style.display = 'none';
-                hhInput.required = false;
-                hhInput.value = '';
-            }
-        }
-
         function togglePass(inputId, iconId) {
             const input = document.getElementById(inputId);
             const icon = document.getElementById(iconId);
@@ -415,17 +370,40 @@
             }
         }
 
-        // Restore selected role on validation error redirect
-        const savedRole = '<?= old('role') ?>';
-        if (savedRole) {
-            document.getElementById('role').value = savedRole;
-            onRoleChange(savedRole);
-        }
-
         // Numbers only for household number
         document.getElementById('household_no').addEventListener('input', function() {
             this.value = this.value.replace(/\D/g, '');
         });
+
+        // Email typo warning
+        function checkEmailTypo(input) {
+            const val = input.value.trim().toLowerCase();
+            const warn = document.getElementById('emailTypoWarn');
+            const msg = document.getElementById('emailTypoMsg');
+            if (!warn || !msg) return;
+            const typos = {
+                'gamil.com': 'gmail.com',
+                'gmal.com': 'gmail.com',
+                'gmial.com': 'gmail.com',
+                'gnail.com': 'gmail.com',
+                'gmai.com': 'gmail.com',
+                'gmaill.com': 'gmail.com',
+                'yahooo.com': 'yahoo.com',
+                'yaho.com': 'yahoo.com',
+                'ymail.com': 'yahoo.com',
+                'hotmial.com': 'hotmail.com',
+                'hotmali.com': 'hotmail.com',
+                'outlok.com': 'outlook.com',
+                'outllook.com': 'outlook.com',
+            };
+            const domain = val.split('@')[1] || '';
+            if (typos[domain]) {
+                msg.textContent = 'Did you mean @' + typos[domain] + '? Please check your email address.';
+                warn.style.display = 'block';
+            } else {
+                warn.style.display = 'none';
+            }
+        }
     </script>
 </body>
 

@@ -388,13 +388,13 @@
         <div class="signature-block">
             <div class="sig-col">
                 <div class="sig-line"></div>
-                <div class="sig-name">Punong Barangay</div>
-                <div class="sig-title">Barangay Bacolod, Bato, Camarines Sur</div>
+                <div class="sig-name"><?= $captainName ?></div>
+                <div class="sig-title">Punong Barangay<br>Barangay Bacolod, Bato, Camarines Sur</div>
             </div>
             <div class="sig-col">
                 <div class="sig-line"></div>
-                <div class="sig-name">Barangay Secretary</div>
-                <div class="sig-title">Barangay Bacolod, Bato, Camarines Sur</div>
+                <div class="sig-name"><?= $secretaryName ?></div>
+                <div class="sig-title">Barangay Secretary<br>Barangay Bacolod, Bato, Camarines Sur</div>
             </div>
         </div>
 
@@ -480,13 +480,13 @@
         <div class="signature-block">
             <div class="sig-col">
                 <div class="sig-line"></div>
-                <div class="sig-name">Punong Barangay</div>
-                <div class="sig-title">Barangay Bacolod, Bato, Camarines Sur</div>
+                <div class="sig-name"><?= $captainName ?></div>
+                <div class="sig-title">Punong Barangay<br>Barangay Bacolod, Bato, Camarines Sur</div>
             </div>
             <div class="sig-col">
                 <div class="sig-line"></div>
-                <div class="sig-name">Barangay Secretary</div>
-                <div class="sig-title">Barangay Bacolod, Bato, Camarines Sur</div>
+                <div class="sig-name"><?= $secretaryName ?></div>
+                <div class="sig-title">Barangay Secretary<br>Barangay Bacolod, Bato, Camarines Sur</div>
             </div>
         </div>
 

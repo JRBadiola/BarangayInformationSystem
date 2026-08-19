@@ -191,8 +191,6 @@
 
     $bs     = $barangaySettings ?? [];
     $fields = $template['fields'] ?? [];
-    $html   = str_replace('\n', "\n", $template['html'] ?? '');  // decode literal \n from DB
-    $key    = $template['template_key'];
 
     // Build the list of available {{placeholders}} from field names + barangay vars
     $fieldPlaceholders = array_map(fn($f) => '{{' . $f['name'] . '}}', $fields);
@@ -238,7 +236,7 @@
                 </div>
             <?php endif; ?>
 
-            <form method="post" action="<?= site_url('secretary/templates/update/' . $key) ?>" id="templateForm">
+            <form method="post" action="<?= site_url('secretary/templates/update/') ?>" id="templateForm">
                 <?= csrf_field() ?>
 
                 <div class="dte-grid">
@@ -249,9 +247,6 @@
                         <div class="dte-tabs">
                             <button type="button" class="dte-tab active" onclick="switchTab('fields',this)">
                                 <i class="fas fa-list-ul" style="margin-right:5px;"></i> Default Values
-                            </button>
-                            <button type="button" class="dte-tab" onclick="switchTab('html',this)">
-                                <i class="fas fa-code" style="margin-right:5px;"></i> HTML Template
                             </button>
                         </div>
 
@@ -327,14 +322,7 @@
                                     </div>
                                 </div>
 
-                                <hr class="dte-divider">
-                                <textarea
-                                    id="htmlEditor"
-                                    name="html"
-                                    class="dte-textarea"
-                                    rows="24"
-                                    placeholder="Paste or write the document HTML here…"
-                                    oninput="refreshPreview()"><?= esc($html) ?></textarea>
+
                                 <p style="font-size:11px;color:#b0b6cc;margin:8px 0 0;">
                                     <i class="fas fa-info-circle"></i>
                                     Use <code>{{placeholder}}</code> tokens — they are replaced with real values when printing.
@@ -429,16 +417,6 @@
             refreshPreview();
         }
 
-        // ── Collect current field values from the form ────────────────────────────
-        function collectFieldValues() {
-            const vals = {};
-            document.querySelectorAll('[name]').forEach(el => {
-                if (el.name && el.name !== 'html' && !el.name.startsWith('csrf')) {
-                    vals[el.name] = el.value || '';
-                }
-            });
-            return vals;
-        }
 
         // ── Ordinal helper ────────────────────────────────────────────────────────
         function ordinal(n) {

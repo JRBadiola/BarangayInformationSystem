@@ -26,9 +26,9 @@ $routes->post('/api/chatbot/chat',        'ChatbotController::chat');
 $routes->post('/api/chatbot/save-log',    'ChatbotController::saveLog');
 $routes->get('/api/chatbot/logs',         'ChatbotController::getLogs');
 
-// Public signup — Resident and SK only (Captain/Secretary/Treasurer are created by admin)
+// Public signup — Resident only (SK/Captain/Secretary/Treasurer are created by admin)
 $routes->get('/signup',           'UIController::create_acc');
-$routes->get('/signup/(:alpha)',  'UIController::create_acc/$1'); // keep for backwards compat
+$routes->get('/signup/(:alpha)',  'UIController::create_acc');   // legacy compat
 $routes->post('/signup/store',    'AuthController::register');
 
 // Forgot password flow
