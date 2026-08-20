@@ -253,7 +253,7 @@
             <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px;">
                 <div>
                     <h2 style="margin:0 0 2px;font-size:18px;font-weight:700;color:#1a1d2e;">Notifications</h2>
-                    <p style="margin:0;font-size:12.5px;color:#9aa0b4;">
+                    <p style="margin:0;font-size:12.5px;color:#9aa0b4;" id="pageTotalLabel">
                         <?= $total > 0
                             ? '<span style="color:#1d2448;font-weight:600;">' . $total . ' item' . ($total !== 1 ? 's' : '') . '</span> need your attention'
                             : 'Everything is up to date' ?>
@@ -283,7 +283,7 @@
                 <a href="/<?= $role ?>/blotter" class="notif-stat <?= $newBlotters === 0 ? 'notif-badge-zero' : '' ?>">
                     <div class="notif-stat-icon" style="background:rgba(220,53,69,.12);color:#dc3545;"><i class="fas fa-book"></i></div>
                     <div>
-                        <div class="notif-stat-num"><?= $newBlotters ?></div>
+                        <div class="notif-stat-num" id="blotterStatNum"><?= $newBlotters ?></div>
                         <div class="notif-stat-label">New Blotters</div>
                     </div>
                 </a>
@@ -390,31 +390,38 @@
                             <?php if ($openBlotters > 0): ?>
                                 <span style="font-size:11px;color:#9aa0b4;"><?= $openBlotters ?> total open</span>
                             <?php endif; ?>
-                            <span class="notif-card-badge <?= $newBlotters === 0 ? 'zero' : '' ?>"><?= $newBlotters ?> new</span>
+                            <span class="notif-card-badge <?= $newBlotters === 0 ? 'zero' : '' ?>" id="blotterBadge"><?= $newBlotters ?> new</span>
                         </div>
                     </div>
                     <?php if (empty($recentBlotters)): ?>
                         <div class="notif-empty"><i class="fas fa-check-circle" style="color:#16c79a;"></i>No new blotter reports</div>
                     <?php else: ?>
-                        <?php foreach ($recentBlotters as $b): ?>
-                            <div class="notif-item">
-                                <div class="notif-item-icon" style="background:rgba(220,53,69,.12);color:#dc3545;"><i class="fas fa-exclamation-circle"></i></div>
-                                <div class="notif-item-body">
-                                    <p class="notif-item-title"><?= esc($b['complainant_name']) ?></p>
-                                    <p class="notif-item-sub">
-                                        <span class="type-pill" style="background:#fff0f3;color:#dc3545;"><?= esc($b['incident_type'] ?? 'Incident') ?></span>
-                                        &nbsp;Status: <?= $b['status'] === 'under_investigation' ? 'Under Investigation' : ucfirst(str_replace('_', ' ', esc($b['status']))) ?>
-                                        <?php if (!empty($b['appointment_date'])): ?>
-                                            &nbsp;· Hearing: <?= date('M d', strtotime($b['appointment_date'])) ?>
-                                        <?php endif; ?>
-                                    </p>
+                        <div id="blotterList">
+                            <?php foreach ($recentBlotters as $b): ?>
+                                <div class="notif-item" id="blotter-<?= (int)$b['id'] ?>" style="transition:opacity .3s,max-height .35s,padding .3s;overflow:hidden;">
+                                    <div class="notif-item-icon" style="background:rgba(220,53,69,.12);color:#dc3545;"><i class="fas fa-exclamation-circle"></i></div>
+                                    <div class="notif-item-body">
+                                        <p class="notif-item-title"><?= esc($b['complainant_name']) ?></p>
+                                        <p class="notif-item-sub">
+                                            <span class="type-pill" style="background:#fff0f3;color:#dc3545;"><?= esc($b['incident_type'] ?? 'Incident') ?></span>
+                                            &nbsp;Status: <?= $b['status'] === 'under_investigation' ? 'Under Investigation' : ucfirst(str_replace('_', ' ', esc($b['status']))) ?>
+                                            <?php if (!empty($b['appointment_date'])): ?>
+                                                &nbsp;· Hearing: <?= date('M d', strtotime($b['appointment_date'])) ?>
+                                            <?php endif; ?>
+                                        </p>
+                                    </div>
+                                    <div class="notif-item-time"><?= timeAgo($b['created_at']) ?></div>
+                                    <div class="notif-item-action" style="margin-left:10px;">
+                                        <a href="/<?= $role ?>/blotter/<?= (int)$b['id'] ?>"
+                                            class="db-btn db-btn--xs db-btn--outline"
+                                            onclick="dismissBlotter(<?= (int)$b['id'] ?>, event)">View</a>
+                                    </div>
                                 </div>
-                                <div class="notif-item-time"><?= timeAgo($b['created_at']) ?></div>
-                                <div class="notif-item-action" style="margin-left:10px;">
-                                    <a href="/<?= $role ?>/blotter/<?= (int)$b['id'] ?>" class="db-btn db-btn--xs db-btn--outline">View</a>
-                                </div>
-                            </div>
-                        <?php endforeach; ?>
+                            <?php endforeach; ?>
+                        </div>
+                        <div id="blotterAllDone" style="display:none;" class="notif-empty">
+                            <i class="fas fa-check-circle" style="color:#16c79a;"></i>All blotter reports reviewed
+                        </div>
                         <?php if ($openBlotters > count($recentBlotters)): ?>
                             <div style="padding:10px 20px;font-size:12px;color:#9aa0b4;border-top:1px solid #f5f6fb;">
                                 + <?= $openBlotters - count($recentBlotters) ?> more open &mdash;
@@ -471,6 +478,109 @@
         document.querySelectorAll('.db-nav-item').forEach(i =>
             i.addEventListener('click', () => document.getElementById('sidebar').classList.remove('open'))
         );
+
+        // ── Blotter dismiss logic ─────────────────────────────────────────────
+        const STORAGE_KEY = 'viewed_blotters_<?= session()->get('user_id') ?>';
+
+        function getViewed() {
+            try {
+                return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function saveViewed(ids) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(ids));
+        }
+
+        function dismissBlotter(id, e) {
+            // Record as viewed
+            const viewed = getViewed();
+            if (!viewed.includes(id)) {
+                viewed.push(id);
+                saveViewed(viewed);
+            }
+
+            // Animate out
+            const row = document.getElementById('blotter-' + id);
+            if (row) {
+                row.style.opacity = '0';
+                row.style.maxHeight = row.offsetHeight + 'px';
+                // Force reflow then collapse
+                requestAnimationFrame(() => {
+                    row.style.maxHeight = '0';
+                    row.style.paddingTop = '0';
+                    row.style.paddingBottom = '0';
+                    row.style.borderBottom = 'none';
+                });
+                setTimeout(() => {
+                    row.remove();
+                    updateBlotterState();
+                }, 370);
+            }
+            // Let the link navigate normally
+        }
+
+        function updateBlotterState() {
+            const list = document.getElementById('blotterList');
+            const badge = document.getElementById('blotterBadge');
+            const done = document.getElementById('blotterAllDone');
+            if (!list) return;
+
+            const remaining = list.querySelectorAll('.notif-item').length;
+
+            // Update section badge
+            if (badge) {
+                badge.textContent = remaining + ' new';
+                badge.classList.toggle('zero', remaining === 0);
+            }
+
+            // Show "all done" empty state
+            if (done && remaining === 0) {
+                list.style.display = 'none';
+                done.style.display = '';
+            }
+
+            // Update summary stat card
+            const statNum = document.getElementById('blotterStatNum');
+            if (statNum) {
+                statNum.textContent = remaining;
+                const card = statNum.closest('.notif-stat');
+                if (card) card.classList.toggle('notif-badge-zero', remaining === 0);
+            }
+
+            // Recompute total (non-blotter counts are static on this page load)
+            const staticCount = <?= (int)($pendingAccounts + $pendingClearances + $upcomingHearings + $upcomingSchedules) ?>;
+            const pageTotal = staticCount + remaining;
+
+            // Update "N items need your attention" label
+            const totalLabel = document.getElementById('pageTotalLabel');
+            if (totalLabel) {
+                totalLabel.innerHTML = pageTotal > 0 ?
+                    '<span style="color:#1d2448;font-weight:600;">' + pageTotal + ' item' + (pageTotal !== 1 ? 's' : '') + '</span> need your attention' :
+                    'Everything is up to date';
+            }
+
+            // Update topbar bell badge
+            const topBadge = document.getElementById('topbarUnreadCount');
+            const topDot = document.getElementById('topbarNotifDot');
+            if (topBadge) {
+                topBadge.textContent = pageTotal > 9 ? '9+' : pageTotal;
+                topBadge.style.display = pageTotal > 0 ? 'flex' : 'none';
+            }
+            if (topDot) topDot.style.display = pageTotal > 0 ? '' : 'none';
+        }
+
+        // ── On page load: hide already-viewed blotters ────────────────────────
+        document.addEventListener('DOMContentLoaded', function() {
+            const viewed = getViewed();
+            viewed.forEach(function(id) {
+                const row = document.getElementById('blotter-' + id);
+                if (row) row.remove();
+            });
+            updateBlotterState();
+        });
     </script>
 </body>
 

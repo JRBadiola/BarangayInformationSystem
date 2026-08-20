@@ -7,6 +7,7 @@
     <title>Blotter Report - Bacolod BIS</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <link rel="stylesheet" href="/style.css">
     <style>
         .bl-grid {
@@ -210,14 +211,10 @@
             </div>
 
             <?php if (session()->getFlashdata('success')): ?>
-                <div class="db-alert db-alert--success" style="margin-bottom:16px;">
-                    <i class="fas fa-check-circle"></i> <?= session()->getFlashdata('success') ?>
-                </div>
+                <?php /* flash handled by SweetAlert below */ ?>
             <?php endif; ?>
             <?php if (session()->getFlashdata('error')): ?>
-                <div class="db-alert db-alert--error" style="margin-bottom:16px;">
-                    <i class="fas fa-exclamation-circle"></i> <?= session()->getFlashdata('error') ?>
-                </div>
+                <?php /* flash handled by SweetAlert below */ ?>
             <?php endif; ?>
 
             <!-- Header card -->
@@ -345,7 +342,8 @@
                                         <div class="bl-form-group" style="margin:0;">
                                             <label>New Date <span style="color:#c0392b;">*</span></label>
                                             <input type="date" name="hearing_date" class="bl-input"
-                                                value="<?= esc($r['hearing_date']) ?>" required>
+                                                value="<?= esc($r['hearing_date']) ?>"
+                                                min="<?= date('Y-m-01') ?>" required>
                                         </div>
                                         <div class="bl-form-group" style="margin:0;">
                                             <label>New Time <span style="color:#c0392b;">*</span></label>
@@ -388,15 +386,43 @@
                         <form action="/<?= $role ?>/blotter/summons/<?= $r['id'] ?>" method="post">
                             <?= csrf_field() ?>
 
-                            <div style="background:#f8f9fc;border:1px solid #e8ecf4;border-radius:10px;padding:14px 16px;margin-bottom:16px;">
+                            <!-- Complainant (auto-filled) -->
+                            <div style="background:#f8f9fc;border:1px solid #e8ecf4;border-radius:10px;padding:14px 16px;margin-bottom:12px;">
                                 <div style="font-size:11px;font-weight:700;color:#9aa0b4;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">
                                     <i class="fas fa-user-tie"></i> Complainant (auto-filled)
                                 </div>
                                 <div style="font-size:13px;font-weight:600;color:#1a1d2e;"><?= esc($r['complainant_full_name'] ?? '—') ?></div>
-                                <div style="font-size:12px;color:#9aa0b4;"><?= esc($r['complainant_email_addr'] ?? '—') ?></div>
+                                <div style="font-size:12px;color:#9aa0b4;margin-top:3px;">
+                                    <i class="fas fa-envelope" style="width:12px;"></i>
+                                    <?= esc($r['complainant_email_addr'] ?? '—') ?>
+                                </div>
                             </div>
 
-                            <div style="font-size:11px;font-weight:700;color:#9aa0b4;text-transform:uppercase;letter-spacing:.5px;margin:16px 0 10px;">
+                            <!-- Respondent fields -->
+                            <div style="font-size:11px;font-weight:700;color:#9aa0b4;text-transform:uppercase;letter-spacing:.5px;margin:14px 0 10px;">
+                                <i class="fas fa-user-slash"></i> Respondent
+                            </div>
+                            <div class="bl-form-group">
+                                <label>Respondent Name</label>
+                                <input type="text" name="respondent_name" class="bl-input"
+                                    value="<?= esc($r['respondent_name'] ?? $r['persons_involved'] ?? '') ?>"
+                                    placeholder="Full name of the respondent">
+                            </div>
+                            <div class="bl-form-group">
+                                <label>Respondent Email <span style="font-size:11px;color:#9aa0b4;font-weight:400;">(required to send summons)</span></label>
+                                <input type="email" name="respondent_email" class="bl-input"
+                                    value="<?= esc($r['respondent_email'] ?? '') ?>"
+                                    placeholder="respondent@email.com">
+                            </div>
+                            <div class="bl-form-group">
+                                <label>Respondent Address <span style="font-size:11px;color:#9aa0b4;font-weight:400;">(optional)</span></label>
+                                <input type="text" name="respondent_address" class="bl-input"
+                                    value="<?= esc($r['respondent_address'] ?? '') ?>"
+                                    placeholder="e.g. Zone 3, Barangay Bacolod">
+                            </div>
+
+                            <!-- Hearing schedule -->
+                            <div style="font-size:11px;font-weight:700;color:#9aa0b4;text-transform:uppercase;letter-spacing:.5px;margin:14px 0 10px;">
                                 <i class="fas fa-calendar-alt"></i> Hearing Schedule
                             </div>
 
@@ -404,7 +430,8 @@
                                 <div class="bl-form-group" style="margin:0;">
                                     <label>Hearing Date <span style="color:#c0392b;">*</span></label>
                                     <input type="date" name="hearing_date" class="bl-input"
-                                        value="<?= esc($r['hearing_date'] ?? '') ?>" required>
+                                        value="<?= esc($r['hearing_date'] ?? '') ?>"
+                                        min="<?= date('Y-m-01') ?>" required>
                                 </div>
                                 <div class="bl-form-group" style="margin:0;">
                                     <label>Hearing Time <span style="color:#c0392b;">*</span></label>
@@ -413,15 +440,24 @@
                                 </div>
                             </div>
                             <div class="bl-form-group">
-                                <label>Hearing Notes (optional)</label>
+                                <label>Hearing Notes <span style="font-size:11px;color:#9aa0b4;font-weight:400;">(optional)</span></label>
                                 <input type="text" name="hearing_notes" class="bl-input"
                                     value="<?= esc($r['hearing_notes'] ?? '') ?>"
                                     placeholder="e.g. Bring supporting documents">
                             </div>
 
+                            <!-- Email notice -->
+                            <div style="background:#f0f4ff;border:1px solid #d0d8f5;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#4a5068;display:flex;gap:8px;align-items:flex-start;">
+                                <i class="fas fa-info-circle" style="color:#5b6fd6;margin-top:1px;flex-shrink:0;"></i>
+                                <span>
+                                    A summons email will be sent to the complainant's registered Gmail
+                                    <?= ! empty($r['respondent_email']) ? 'and the respondent\'s email' : '<strong>only</strong>. Enter the respondent\'s email above to also notify them' ?>.
+                                </span>
+                            </div>
+
                             <button type="submit" class="bl-btn bl-btn--danger bl-btn--full">
                                 <i class="fas fa-paper-plane"></i>
-                                <?= $r['summons_sent_at'] ? 'Save Edit' : 'Save' ?>
+                                <?= $r['summons_sent_at'] ? 'Save &amp; Resend Summons' : 'Save &amp; Send Summons' ?>
                             </button>
                         </form>
                     </div>
@@ -430,10 +466,37 @@
             </div>
         </div>
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         document.querySelectorAll('.db-nav-item').forEach(i =>
             i.addEventListener('click', () => document.getElementById('sidebar').classList.remove('open'))
         );
+
+        // ── SweetAlert flash notifications ────────────────────────────────
+        <?php $flashSuccess = session()->getFlashdata('success'); ?>
+        <?php $flashError   = session()->getFlashdata('error');   ?>
+
+        <?php if ($flashSuccess): ?>
+            Swal.fire({
+                icon: 'success',
+                title: 'Success',
+                text: <?= json_encode($flashSuccess) ?>,
+                confirmButtonColor: '#1d2448',
+                confirmButtonText: 'OK',
+                timer: 4000,
+                timerProgressBar: true
+            });
+        <?php endif; ?>
+
+        <?php if ($flashError): ?>
+            Swal.fire({
+                icon: 'error',
+                title: 'Something went wrong',
+                text: <?= json_encode($flashError) ?>,
+                confirmButtonColor: '#c0392b',
+                confirmButtonText: 'Close'
+            });
+        <?php endif; ?>
     </script>
 </body>
 

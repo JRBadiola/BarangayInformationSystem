@@ -116,6 +116,7 @@ $routes->group('/captain', ['filter' => ['auth', 'role:captain']], function ($ro
 $routes->group('/secretary', ['filter' => ['auth', 'role:secretary']], function ($routes) {
     $routes->get('dashboard',          'UIController::secretary_dashboard');
     $routes->get('census',             'UIController::secretary_census');
+    $routes->get('residents',          'UIController::secretary_residents');
     $routes->get('household/(:segment)', 'UIController::secretary_household/$1');
     $routes->get('clearance',          'ClearanceController::adminIndex/secretary');
     $routes->get('clearance/request/(:num)',     'ClearanceController::residentDetail/$1');
@@ -149,8 +150,10 @@ $routes->group('/secretary', ['filter' => ['auth', 'role:secretary']], function 
     $routes->post('calendar/update/(:num)', 'ScheduleController::update/$1');
     $routes->post('calendar/delete/(:num)', 'ScheduleController::delete/$1');
 
-    // Secretary (super admin) — approve/reject pending accounts
-    $routes->get('pending-accounts',        'AuthController::pendingAccounts');
+    // Secretary (super admin) — approve/reject pending accounts (merged into /residents)
+    $routes->get('pending-accounts',        function () {
+        return redirect()->to('/secretary/residents');
+    });
     $routes->post('approve-account/(:num)', 'AuthController::approveAccount/$1');
     $routes->post('reject-account/(:num)',  'AuthController::rejectAccount/$1');
 

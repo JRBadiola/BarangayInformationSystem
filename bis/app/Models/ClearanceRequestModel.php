@@ -23,6 +23,8 @@ class ClearanceRequestModel extends Model
         'processed_by',
         'processed_at',
         'est_release_date',
+        'issued_captain_name',
+        'issued_date',
     ];
 
     /**

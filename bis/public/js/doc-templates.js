@@ -29,6 +29,11 @@ const BisDoc = (function () {
         captain_title : 'Punong Barangay',
     };
 
+    // ── Per-document snapshot (set when rendering an already-approved doc) ────
+    // Populated via setSnapshot() before build()/print(), then cleared after use
+    // so pending documents still use the live captain name and today's date.
+    let _snapshot = { captain_name: null, issued_date: null };
+
     function setCensus(data)   { _census = Object.assign(_census, data); }
     function setCaptain(name)  { if (name) _b.captain_name = name; }
 
@@ -38,6 +43,19 @@ const BisDoc = (function () {
      */
     function setBarangay(data) {
         if (data) _b = Object.assign(_b, data);
+    }
+
+    /**
+     * Set immutable snapshot values for an already-approved document.
+     * Call this immediately before build() or print() for approved requests.
+     * Pass null for either field to fall back to the live value.
+     *
+     * @param {string|null} captainName  e.g. 'EMILIANO S BATOY'
+     * @param {string|null} issuedDate   ISO date string e.g. '2026-08-20'
+     */
+    function setSnapshot(captainName, issuedDate) {
+        _snapshot.captain_name = captainName || null;
+        _snapshot.issued_date  = issuedDate  || null;
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

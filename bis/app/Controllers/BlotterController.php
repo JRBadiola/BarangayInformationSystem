@@ -522,8 +522,14 @@ class BlotterController extends BaseController
                 ->with('error', implode(' | ', $errors));
         }
 
+        $sent = ['complainant'];
+        if (! empty($respondentEmail)) $sent[] = 'respondent';
+        $sentLabel = count($sent) === 2
+            ? 'Summons sent to both complainant and respondent.'
+            : 'Summons sent to complainant. No respondent email provided.';
+
         return redirect()->to('/' . $role . '/blotter/' . $id)
-            ->with('success', 'Hearing Schedule saved successfully.');
+            ->with('success', 'Hearing schedule saved. ' . $sentLabel);
     }
 
     // ── Admin: reschedule hearing ─────────────────────────────────────────────

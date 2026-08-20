@@ -148,6 +148,41 @@ class AuthController extends BaseController
             if (! $nameFound) {
                 return redirect()->back()->with('error', 'Your name does not match any member recorded under Household #' . esc($householdNo) . '. Please check your name and household number, or contact the barangay office.')->withInput();
             }
+
+            // ── Minor check: block registration if the matched person is under 18 ──
+            // Find the DOB of the matched person (head or member)
+            $matchedDob = null;
+
+            $headFull2    = strtoupper(trim($household['first_name'] . ' ' . $household['last_name']));
+            $headFullAlt2 = strtoupper(trim($household['last_name'] . ' ' . $household['first_name']));
+
+            if (
+                $enteredFull === $headFull2 || $enteredFull === $headFullAlt2
+                || $enteredFullAlt === $headFull2 || $enteredFullAlt === $headFullAlt2
+            ) {
+                $matchedDob = $household['date_of_birth'] ?? null;
+            } else {
+                foreach ($members as $m) {
+                    $mFull2    = strtoupper(trim($m['first_name'] . ' ' . $m['last_name']));
+                    $mFullAlt2 = strtoupper(trim($m['last_name'] . ' ' . $m['first_name']));
+                    if (
+                        $enteredFull === $mFull2 || $enteredFull === $mFullAlt2
+                        || $enteredFullAlt === $mFull2 || $enteredFullAlt === $mFullAlt2
+                    ) {
+                        $matchedDob = $m['date_of_birth'] ?? null;
+                        break;
+                    }
+                }
+            }
+
+            if (! empty($matchedDob)) {
+                $age = (int) date_diff(date_create($matchedDob), date_create('today'))->y;
+                if ($age < 18) {
+                    return redirect()->back()
+                        ->with('error', 'Account registration is only allowed for residents who are 18 years old or above. Minors cannot create an account.')
+                        ->withInput();
+                }
+            }
         }
 
         $otp     = strval(random_int(100000, 999999));
@@ -476,14 +511,16 @@ class AuthController extends BaseController
     {
         $this->userModel->approveUser($id);
         $role = session()->get('role');
-        return redirect()->to('/' . $role . '/pending-accounts')->with('success', 'Account approved successfully.');
+        $back = ($role === 'secretary') ? '/secretary/residents' : '/' . $role . '/pending-accounts';
+        return redirect()->to($back)->with('success', 'Account approved successfully.');
     }
 
     public function rejectAccount(int $id)
     {
         $this->userModel->rejectUser($id);
         $role = session()->get('role');
-        return redirect()->to('/' . $role . '/pending-accounts')->with('success', 'Account rejected.');
+        $back = ($role === 'secretary') ? '/secretary/residents' : '/' . $role . '/pending-accounts';
+        return redirect()->to($back)->with('success', 'Account rejected.');
     }
 
     // ── Promote existing resident → official role (Secretary only) ───────────

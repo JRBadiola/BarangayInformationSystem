@@ -304,10 +304,21 @@ class ClearanceController extends BaseController
         $role = session()->get('role');
         $req  = $this->model->find($id);
 
+        // ── Capture immutable snapshots at the moment of approval ─────────────
+        // These are written once and never updated again, so the printed document
+        // always shows the captain who approved it and the exact issuance date —
+        // even if a new captain is appointed or months pass before printing.
+        $settingsModel   = new \App\Models\BarangaySettingsModel();
+        $barangaySettings = $settingsModel->getAll();
+        $snapshotCaptain = $barangaySettings['captain_name'] ?: 'PUNONG BARANGAY';
+        $snapshotDate    = date('Y-m-d');
+
         $this->model->update($id, [
-            'status'       => 'approved',
-            'processed_by' => session()->get('user_id'),
-            'processed_at' => date('Y-m-d H:i:s'),
+            'status'              => 'approved',
+            'processed_by'        => session()->get('user_id'),
+            'processed_at'        => date('Y-m-d H:i:s'),
+            'issued_captain_name' => $snapshotCaptain,
+            'issued_date'         => $snapshotDate,
         ]);
 
         // Notify the resident

@@ -564,6 +564,154 @@ class UIController extends BaseController
     {
         return $this->_censusView('secretary');
     }
+
+    public function secretary_residents()
+    {
+        $db = \Config\Database::connect();
+
+        // ── Filters ───────────────────────────────────────────────────────
+        $search     = trim($_GET['search']      ?? '');
+        $filterZone = trim($_GET['zone']        ?? '');
+        $filterAcct = trim($_GET['account']     ?? ''); // 'active','pending','none'
+        $filterAge  = trim($_GET['age_group']   ?? ''); // 'minor','adult'
+        $page       = max(1, (int) ($_GET['page'] ?? 1));
+        $perPage    = 20;
+        $offset     = ($page - 1) * $perPage;
+
+        // ── Build the UNION query: heads + members, LEFT JOIN users ───────
+        // Head columns we need
+        $headSql = "SELECT
+            h.household_no,
+            h.last_name,
+            h.first_name,
+            h.middle_name,
+            h.suffix,
+            h.date_of_birth,
+            h.gender,
+            h.zone,
+            'Household Head' AS relationship,
+            u.id            AS user_id,
+            u.username,
+            u.email,
+            u.status        AS account_status,
+            u.role          AS account_role
+        FROM households h
+        LEFT JOIN users u ON u.household_no = h.household_no AND u.role = 'resident'";
+
+        // Member columns (no direct user account link — members share the household)
+        $memberSql = "SELECT
+            m.household_no,
+            m.last_name,
+            m.first_name,
+            m.middle_name,
+            m.suffix,
+            m.date_of_birth,
+            m.gender,
+            h2.zone,
+            m.relationship,
+            NULL  AS user_id,
+            NULL  AS username,
+            NULL  AS email,
+            NULL  AS account_status,
+            NULL  AS account_role
+        FROM household_members m
+        INNER JOIN households h2 ON h2.household_no = m.household_no";
+
+        // ── Apply WHERE clauses ───────────────────────────────────────────
+        $hwhere = [];
+        $mwhere = [];
+
+        if ($search !== '') {
+            $s        = $db->escapeLikeString($search);
+            $hwhere[] = "(h.last_name LIKE '%{$s}%' OR h.first_name LIKE '%{$s}%')";
+            $mwhere[] = "(m.last_name LIKE '%{$s}%' OR m.first_name LIKE '%{$s}%')";
+        }
+        if ($filterZone !== '') {
+            $z        = $db->escapeString($filterZone);
+            $hwhere[] = "h.zone = '{$z}'";
+            $mwhere[] = "h2.zone = '{$z}'";
+        }
+        if ($filterAcct === 'active') {
+            $hwhere[] = "u.status = 'active'";
+            // members never have direct accounts, so exclude them from this filter
+            $mwhere[] = "1=0";
+        } elseif ($filterAcct === 'pending') {
+            $hwhere[] = "(u.status = 'pending' OR u.status = 'unverified')";
+            $mwhere[] = "1=0";
+        } elseif ($filterAcct === 'none') {
+            $hwhere[] = "u.id IS NULL";
+            // all members have no account — keep them
+        }
+        if ($filterAge === 'minor') {
+            $cutoff   = date('Y-m-d', strtotime('-18 years'));
+            $hwhere[] = "h.date_of_birth IS NOT NULL AND h.date_of_birth > '{$cutoff}'";
+            $mwhere[] = "m.date_of_birth IS NOT NULL AND m.date_of_birth > '{$cutoff}'";
+        } elseif ($filterAge === 'adult') {
+            $cutoff   = date('Y-m-d', strtotime('-18 years'));
+            $hwhere[] = "h.date_of_birth IS NOT NULL AND h.date_of_birth <= '{$cutoff}'";
+            $mwhere[] = "m.date_of_birth IS NOT NULL AND m.date_of_birth <= '{$cutoff}'";
+        }
+
+        if (! empty($hwhere)) {
+            $headSql   .= ' WHERE ' . implode(' AND ', $hwhere);
+        }
+        if (! empty($mwhere)) {
+            $memberSql .= ' WHERE ' . implode(' AND ', $mwhere);
+        }
+
+        // Skip members entirely when filtering by account status
+        $unionSql = ($filterAcct !== '')
+            ? "({$headSql}) ORDER BY last_name ASC, first_name ASC"
+            : "({$headSql}) UNION ALL ({$memberSql}) ORDER BY last_name ASC, first_name ASC";
+
+        $total    = (int) $db->query("SELECT COUNT(*) AS c FROM ({$unionSql}) AS x")->getRow()->c;
+        $residents = $db->query("{$unionSql} LIMIT {$perPage} OFFSET {$offset}")->getResultArray();
+
+        // ── Summary counts (unfiltered) ───────────────────────────────────
+        $totalHeads   = (int) $db->table('households')->countAllResults();
+        $totalMembers = (int) $db->table('household_members')->countAllResults();
+        $totalPop     = $totalHeads + $totalMembers;
+        $activeAccts  = (int) $db->table('users')
+            ->where('role', 'resident')->where('status', 'active')->countAllResults();
+        $pendingAccts = (int) $db->table('users')
+            ->where('role', 'resident')
+            ->groupStart()->where('status', 'pending')->orWhere('status', 'unverified')->groupEnd()
+            ->countAllResults();
+        $cutoffMinor  = date('Y-m-d', strtotime('-18 years'));
+        $minorHeads   = (int) $db->query(
+            "SELECT COUNT(*) AS c FROM households WHERE date_of_birth IS NOT NULL AND date_of_birth > '{$cutoffMinor}'"
+        )->getRow()->c;
+        $minorMembers = (int) $db->query(
+            "SELECT COUNT(*) AS c FROM household_members WHERE date_of_birth IS NOT NULL AND date_of_birth > '{$cutoffMinor}'"
+        )->getRow()->c;
+        $totalMinors  = $minorHeads + $minorMembers;
+
+        // ── Pending account approvals (merged into this page) ────────────
+        $pendingUsers = $db->table('users')
+            ->where('status', 'pending')
+            ->whereIn('role', ['sk', 'resident'])
+            ->orderBy('created_at', 'ASC')
+            ->get()->getResultArray();
+
+        return view('dashboard/secretary/residents', [
+            'residents'    => $residents,
+            'total'        => $total,
+            'perPage'      => $perPage,
+            'currentPage'  => $page,
+            'search'       => $search,
+            'filterZone'   => $filterZone,
+            'filterAcct'   => $filterAcct,
+            'filterAge'    => $filterAge,
+            // stats
+            'totalPop'     => $totalPop,
+            'activeAccts'  => $activeAccts,
+            'pendingAccts' => $pendingAccts,
+            'totalMinors'  => $totalMinors,
+            // pending approvals
+            'pendingUsers' => $pendingUsers,
+        ]);
+    }
+
     public function secretary_household($id = null)
     {
         $householdModel = new \App\Models\HouseholdModel();

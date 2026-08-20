@@ -239,6 +239,9 @@
             <form method="post" action="<?= site_url('secretary/templates/update/') ?>" id="templateForm">
                 <?= csrf_field() ?>
 
+                <!-- Hidden textarea: holds the template HTML for the live preview -->
+                <textarea id="htmlEditor" name="html" style="display:none;"><?= esc($template['html'] ?? '') ?></textarea>
+
                 <div class="dte-grid">
 
                     <!-- ── LEFT PANEL: Fields + HTML editor ────────────────── -->
@@ -255,7 +258,6 @@
                             <div class="dte-panel">
                                 <p class="dte-panel-title"><i class="fas fa-list-ul"></i> Default Field Values</p>
                                 <p style="font-size:12px;color:#9aa0b4;margin:0 0 16px;">These values pre-fill the document when a request is printed. They can be overridden per-request.</p>
-
                                 <?php foreach ($fields as $field): ?>
                                     <div class="dte-field">
                                         <label class="dte-label" for="<?= esc($field['name']) ?>"><?= esc($field['label']) ?></label>
@@ -417,6 +419,18 @@
             refreshPreview();
         }
 
+
+        // ── Collect current field values from the form inputs ─────────────────────
+        function collectFieldValues() {
+            const result = {};
+            document.querySelectorAll('#templateForm input[name], #templateForm textarea[name], #templateForm select[name]').forEach(el => {
+                const name = el.getAttribute('name');
+                if (name && name !== 'html' && name !== <?= json_encode(csrf_token()) ?>) {
+                    result[name] = el.value || '';
+                }
+            });
+            return result;
+        }
 
         // ── Ordinal helper ────────────────────────────────────────────────────────
         function ordinal(n) {

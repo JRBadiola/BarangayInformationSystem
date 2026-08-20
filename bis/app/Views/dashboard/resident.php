@@ -419,7 +419,7 @@
 
              <!-- Scrollable body -->
              <div style="overflow-y:auto;padding:20px 24px 24px;flex:1;">
-                 <form action="/public/blotter/store" method="post" id="blotterForm">
+                 <form action="/resident/blotter/store" method="post" id="blotterForm">
                      <?= csrf_field() ?>
 
                      <!-- ── Complainant Name ── -->
@@ -440,20 +440,20 @@
                              <input type="text" name="complainant_middle_name" placeholder="Middle name">
                          </div>
                          <div class="form-group" style="margin-bottom:10px;">
-                             <label>Contact Number <span style="color:#e74c3c;">*</span></label>
-                             <input type="text" name="contact_number" placeholder="e.g. 09XX-XXX-XXXX" required>
+                             <label>Contact Number</label>
+                             <input type="text" name="contact_number" placeholder="e.g. 09XX-XXX-XXXX">
                          </div>
                      </div>
                      <div class="form-group" style="margin-bottom:10px;">
-                         <label>Email Address <span style="color:#e74c3c;">*</span></label>
-                         <input type="email" name="complainant_email" placeholder="your@email.com" required>
+                         <label>Email Address</label>
+                         <input type="email" name="complainant_email" placeholder="your@email.com">
                      </div>
 
                      <!-- ── Incident Details ── -->
                      <p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#9aa0b4;margin:14px 0 8px;">Incident Details</p>
                      <div class="form-group" style="margin-bottom:10px;">
-                         <label>Respondent Name <span style="color:#e74c3c;">*</span></label>
-                         <input type="text" name="respondent_name" placeholder="Name of the person being reported" required>
+                         <label>Respondent Name</label>
+                         <input type="text" name="respondent_name" placeholder="Name of the person being reported">
                      </div>
                      <div class="form-row" style="grid-template-columns:1fr 1fr;gap:10px;">
                          <div class="form-group" style="margin-bottom:10px;">
@@ -566,6 +566,13 @@
          document.querySelectorAll('.db-nav-item').forEach(item => {
              item.addEventListener('click', () => document.getElementById('sidebar').classList.remove('open'));
          });
+
+         // Re-open blotter modal if there was a validation error on submit
+         <?php if (session()->getFlashdata('blotter_error')): ?>
+             document.addEventListener('DOMContentLoaded', function() {
+                 openModal('blotterModal');
+             });
+         <?php endif; ?>
      </script>
  </body>
 
